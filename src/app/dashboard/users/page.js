@@ -17,23 +17,22 @@ import { showToast } from '../../../lib/toast';
 import { useSweetAlert } from '../../../components/SweetAlerts';
 import { UserActionMenu, BulkUserActions, UserFormActions } from '../../../components/UserActions';
 import '../../../app/globals.css';
-
+import {Pages} from "../../data/routes";
 
 export default function UsersPage() {
   // Redux state
   const dispatch = useDispatch();
-  const { 
-    users, 
-    loading, 
-    error, 
-    totalCount, 
-    filters, 
-    pagination 
+  const {
+    users,
+    loading,
+    error,
+    totalCount,
+    filters,
+    pagination
   } = useSelector((state) => state.users);
 
   // Local state
   const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -56,20 +55,9 @@ export default function UsersPage() {
     is_active: true
   });
 
-  // Available permissions for selection
-  const availablePermissions = [
-    'read_users', 'write_users', 'delete_users',
-    'read_invoices', 'write_invoices', 'delete_invoices',
-    'read_clients', 'write_clients', 'delete_clients',
-    'read_reports', 'write_reports',
-    'system_admin', 'billing_management'
-  ];
 
 
 
-
-
-  
 
   // Load users on component mount
   useEffect(() => {
@@ -97,16 +85,32 @@ export default function UsersPage() {
     setSortConfig({ key, direction });
   };
 
-  // Handle form submission
+  // Handle form submission (both create and edit)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    
-    if (formData.password.length < 6) {
-      showToast('Password must be at least 6 characters long!', 'error');
-      setIsSubmitting(false);
-      return;
+
+    // Validation for both create and edit
+    if (editingUser) {
+      // Edit mode validation
+      if (formData.password && formData.password !== formData.confirmPassword) {
+        showToast('Passwords do not match!', 'error');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (formData.password && formData.password.length < 6) {
+        showToast('Password must be at least 6 characters long!', 'error');
+        setIsSubmitting(false);
+        return;
+      }
+    } else {
+      // Create mode validation
+      if (formData.password.length < 6) {
+        showToast('Password must be at least 6 characters long!', 'error');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     if (!formData.email || !formData.first_name || !formData.last_name) {
@@ -114,23 +118,45 @@ export default function UsersPage() {
       setIsSubmitting(false);
       return;
     }
-    
-    try {
-      // Prepare user data according to schema (exclude confirmPassword)
-      const userData = {
-        email: formData.email,
-        password: formData.password,
-        client_id: formData.client_id && formData.client_id !== '' ? formData.client_id : null,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        role: formData.role,
-        permissions: formData.permissions,
-        is_active: formData.is_active
-      };
 
-      await dispatch(createUser(userData)).unwrap();
-      
-      // Reset form
+    try {
+      if (editingUser) {
+        // Edit mode
+        const updateData = {
+          email: formData.email,
+          client_id: formData.client_id && formData.client_id !== '' ? formData.client_id : null,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          role: formData.role,
+          permissions: formData.permissions,
+          is_active: formData.is_active
+        };
+
+        // Only include password if it's provided
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
+
+        await dispatch(updateUser({ id: editingUser._id, userData: updateData })).unwrap();
+        showToast('<h5>User Updated Successfully!</h5><p>User information has been updated.</p>', 'success');
+      } else {
+        // Create mode
+        const userData = {
+          email: formData.email,
+          password: formData.password,
+          client_id: formData.client_id && formData.client_id !== '' ? formData.client_id : null,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          role: formData.role,
+          permissions: formData.permissions,
+          is_active: formData.is_active
+        };
+
+        await dispatch(createUser(userData)).unwrap();
+        showToast('<h5>User Created Successfully!</h5><p>New user has been added to the system.</p>', 'success');
+      }
+
+      // Reset form and close modal
       setFormData({
         email: '',
         password: '',
@@ -142,11 +168,12 @@ export default function UsersPage() {
         permissions: [],
         is_active: true
       });
-      
+
+      setEditingUser(null);
       setShowModal(false);
-      showToast('<h5>User Created Successfully!</h5><p>New user has been added to the system.</p>', 'success');
     } catch (error) {
-      showToast(`<h5>Error Creating User</h5><p>${error}</p>`, 'error');
+      const errorMessage = editingUser ? 'Error Updating User' : 'Error Creating User';
+      showToast(`<h5>${errorMessage}</h5><p>${error}</p>`, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -166,79 +193,15 @@ export default function UsersPage() {
       permissions: user.permissions || [],
       is_active: user.is_active
     });
-    setShowEditModal(true);
+    setShowModal(true);
   };
 
-  // Handle update user
-  const handleUpdateUser = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Basic validation for edit
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      showToast('Passwords do not match!', 'error');
-      setIsSubmitting(false);
-      return;
-    }
-    
-    if (formData.password && formData.password.length < 6) {
-      showToast('Password must be at least 6 characters long!', 'error');
-      setIsSubmitting(false);
-      return;
-    }
 
-    if (!formData.email || !formData.first_name || !formData.last_name) {
-      showToast('Please fill in all required fields!', 'error');
-      setIsSubmitting(false);
-      return;
-    }
-    
-    try {
-      // Prepare user data for update
-      const updateData = {
-        email: formData.email,
-        client_id: formData.client_id && formData.client_id !== '' ? formData.client_id : null,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        role: formData.role,
-        permissions: formData.permissions,
-        is_active: formData.is_active
-      };
-
-      // Only include password if it's provided
-      if (formData.password) {
-        updateData.password = formData.password;
-      }
-
-      await dispatch(updateUser({ id: editingUser._id, userData: updateData })).unwrap();
-      
-      // Reset form and close modal
-      setFormData({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        client_id: null,
-        first_name: '',
-        last_name: '',
-        role: 'customers',
-        permissions: [],
-        is_active: true
-      });
-      
-      setEditingUser(null);
-      setShowEditModal(false);
-      showToast('<h5>User Updated Successfully!</h5><p>User information has been updated.</p>', 'success');
-    } catch (error) {
-      showToast(`<h5>Error Updating User</h5><p>${error}</p>`, 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Handle checkbox selection
   const handleSelectUser = (userId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
+    setSelectedUsers(prev =>
+      prev.includes(userId)
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
@@ -260,20 +223,20 @@ export default function UsersPage() {
   // Handle status filter change
   const handleStatusFilterChange = (status) => {
     const currentStatuses = filters.statuses || [];
-    const newStatuses = currentStatuses.includes(status) 
+    const newStatuses = currentStatuses.includes(status)
       ? currentStatuses.filter(s => s !== status)
       : [...currentStatuses, status];
-    
+
     dispatch(setFilters({ statuses: newStatuses, page: 1 }));
   };
 
   // Handle role filter change
   const handleRoleFilterChange = (role) => {
     const currentRoles = filters.roles || [];
-    const newRoles = currentRoles.includes(role) 
+    const newRoles = currentRoles.includes(role)
       ? currentRoles.filter(r => r !== role)
       : [...currentRoles, role];
-    
+
     dispatch(setFilters({ roles: newRoles, page: 1 }));
   };
 
@@ -326,11 +289,11 @@ export default function UsersPage() {
   const handleImport = async (file) => {
     const importFormData = new FormData();
     importFormData.append('file', file);
-    
+
     try {
       showToast('Importing users from Excel...', 'info');
       const result = await dispatch(importUsers(importFormData)).unwrap();
-      
+
       let successMessage = '<h5>Import Completed!</h5>';
       if (result.summary.created > 0) {
         successMessage += `<p>✅ ${result.summary.created} new users created</p>`;
@@ -341,10 +304,10 @@ export default function UsersPage() {
       if (result.summary.failed > 0) {
         successMessage += `<p>❌ ${result.summary.failed} users failed to import</p>`;
       }
-      
+
       showToast(successMessage, 'success');
       setShowImportModal(false);
-      
+
       // Refresh the user list to show changes
       dispatch(fetchUsers(filters));
     } catch (error) {
@@ -409,6 +372,8 @@ export default function UsersPage() {
     );
   };
 
+
+
   if (loading) {
     return (
       <div className="nk-content-inner">
@@ -459,7 +424,7 @@ export default function UsersPage() {
                   <ul className="nk-block-tools g-5">
                     <li className="nk-block-tools-opt">
                       {selectedUsers.length > 0 && (
-                        <button 
+                        <button
                           className="btn btn-outline-danger mr-2"
                           onClick={() => handleBulkDelete(selectedUsers)}
                           disabled={loading}
@@ -468,7 +433,7 @@ export default function UsersPage() {
                           <span>Delete Selected ({selectedUsers.length})</span>
                         </button>
                       )}
-                       <button 
+                      <button
                         className="btn btn-danger"
                         onClick={handleExport}
                         disabled={loading}
@@ -476,7 +441,7 @@ export default function UsersPage() {
                         <em className="icon ni ni-file"></em>
                         <span>Export Excel</span>
                       </button>
-                      <button 
+                      <button
                         className="btn btn-info ml-3"
                         onClick={() => setShowImportModal(true)}
                         disabled={loading}
@@ -484,14 +449,28 @@ export default function UsersPage() {
                         <em className="icon ni ni-file"></em>
                         <span>Import Excel</span>
                       </button>
-                      <button 
+                      <button
                         className="btn btn-primary ml-3"
-                        onClick={() => setShowModal(true)}
+                        onClick={() => {
+                          setEditingUser(null);
+                          setFormData({
+                            email: '',
+                            password: '',
+                            confirmPassword: '',
+                            client_id: null,
+                            first_name: '',
+                            last_name: '',
+                            role: 'customers',
+                            permissions: [],
+                            is_active: true
+                          });
+                          setShowModal(true);
+                        }}
                       >
                         <em className="icon ni ni-plus"></em>
                         <span>Add User</span>
                       </button>
-                      
+
                     </li>
                   </ul>
                 </div>
@@ -569,9 +548,9 @@ export default function UsersPage() {
                                             <label className="overline-title overline-title-alt">Status</label>
                                             <div className="custom-control-group">
                                               <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="checkbox"
+                                                  className="custom-control-input"
                                                   id="filter-status-active"
                                                   checked={filters.statuses?.includes('active')}
                                                   onChange={() => handleStatusFilterChange('active')}
@@ -582,9 +561,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="checkbox"
+                                                  className="custom-control-input"
                                                   id="filter-status-inactive"
                                                   checked={filters.statuses?.includes('inactive')}
                                                   onChange={() => handleStatusFilterChange('inactive')}
@@ -595,9 +574,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="checkbox"
+                                                  className="custom-control-input"
                                                   id="filter-status-pending"
                                                   checked={filters.statuses?.includes('pending')}
                                                   onChange={() => handleStatusFilterChange('pending')}
@@ -615,9 +594,9 @@ export default function UsersPage() {
                                             <label className="overline-title overline-title-alt">Items Per Page</label>
                                             <div className="custom-control-group">
                                               <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="radio"
+                                                  className="custom-control-input"
                                                   id="filter-limit-2"
                                                   name="itemsPerPage"
                                                   checked={filters.limit === 2}
@@ -629,9 +608,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="radio"
+                                                  className="custom-control-input"
                                                   id="filter-limit-10"
                                                   name="itemsPerPage"
                                                   checked={filters.limit === 10}
@@ -643,9 +622,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="radio"
+                                                  className="custom-control-input"
                                                   id="filter-limit-20"
                                                   name="itemsPerPage"
                                                   checked={filters.limit === 20}
@@ -657,9 +636,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="radio"
+                                                  className="custom-control-input"
                                                   id="filter-limit-30"
                                                   name="itemsPerPage"
                                                   checked={filters.limit === 30}
@@ -671,9 +650,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="radio"
+                                                  className="custom-control-input"
                                                   id="filter-limit-40"
                                                   name="itemsPerPage"
                                                   checked={filters.limit === 40}
@@ -685,9 +664,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="radio"
+                                                  className="custom-control-input"
                                                   id="filter-limit-50"
                                                   name="itemsPerPage"
                                                   checked={filters.limit === 50}
@@ -699,9 +678,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="radio"
+                                                  className="custom-control-input"
                                                   id="filter-limit-100"
                                                   name="itemsPerPage"
                                                   checked={filters.limit === 100}
@@ -720,9 +699,9 @@ export default function UsersPage() {
                                             <label className="overline-title overline-title-alt">User Roles</label>
                                             <div className="custom-control-group">
                                               <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="checkbox"
+                                                  className="custom-control-input"
                                                   id="filter-role-superAdmin"
                                                   checked={filters.roles?.includes('superAdmin')}
                                                   onChange={() => handleRoleFilterChange('superAdmin')}
@@ -733,9 +712,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="checkbox"
+                                                  className="custom-control-input"
                                                   id="filter-role-moderator"
                                                   checked={filters.roles?.includes('moderator')}
                                                   onChange={() => handleRoleFilterChange('moderator')}
@@ -746,9 +725,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="checkbox"
+                                                  className="custom-control-input"
                                                   id="filter-role-customers"
                                                   checked={filters.roles?.includes('customers')}
                                                   onChange={() => handleRoleFilterChange('customers')}
@@ -759,9 +738,9 @@ export default function UsersPage() {
                                                 </label>
                                               </div>
                                               <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
+                                                <input
+                                                  type="checkbox"
+                                                  className="custom-control-input"
                                                   id="filter-role-customerUsers"
                                                   checked={filters.roles?.includes('customerUsers')}
                                                   onChange={() => handleRoleFilterChange('customerUsers')}
@@ -777,15 +756,15 @@ export default function UsersPage() {
                                       </div>
                                     </div>
                                     <div className="dropdown-foot between" onClick={(e) => e.stopPropagation()}>
-                                      <button 
-                                        type="button" 
+                                      <button
+                                        type="button"
                                         className="btn btn-sm btn-outline-light"
                                         onClick={() => dispatch(clearFilters())}
                                       >
                                         Reset Filters
                                       </button>
-                                      <button 
-                                        type="button" 
+                                      <button
+                                        type="button"
                                         className="btn btn-sm btn-primary"
                                         onClick={() => {
                                           // Close the dropdown after applying filters
@@ -808,7 +787,7 @@ export default function UsersPage() {
               </div>
 
               {/* Selected Users Actions */}
-              <BulkUserActions 
+              <BulkUserActions
                 selectedUsers={selectedUsers}
                 onBulkDelete={handleBulkDelete}
                 onClearSelection={() => setSelectedUsers([])}
@@ -831,7 +810,7 @@ export default function UsersPage() {
                       </div>
                     </div>
                     <div className="nk-tb-col">
-                      <span 
+                      <span
                         className="sub-text cursor-pointer"
                         onClick={() => handleSort('first_name')}
                       >
@@ -842,7 +821,7 @@ export default function UsersPage() {
                       </span>
                     </div>
                     <div className="nk-tb-col tb-col-mb">
-                      <span 
+                      <span
                         className="sub-text cursor-pointer"
                         onClick={() => handleSort('email')}
                       >
@@ -853,7 +832,7 @@ export default function UsersPage() {
                       </span>
                     </div>
                     <div className="nk-tb-col tb-col-md">
-                      <span 
+                      <span
                         className="sub-text cursor-pointer"
                         onClick={() => handleSort('role')}
                       >
@@ -864,7 +843,7 @@ export default function UsersPage() {
                       </span>
                     </div>
                     <div className="nk-tb-col tb-col-lg">
-                      <span 
+                      <span
                         className="sub-text cursor-pointer"
                         onClick={() => handleSort('is_active')}
                       >
@@ -874,8 +853,11 @@ export default function UsersPage() {
                         )}
                       </span>
                     </div>
+                    <div className="nk-tb-col tb-col-lg">
+                      <span className="sub-text">Permissions</span>
+                    </div>
                     <div className="nk-tb-col tb-col-md">
-                      <span 
+                      <span
                         className="sub-text cursor-pointer"
                         onClick={() => handleSort('lastLogin')}
                       >
@@ -924,10 +906,20 @@ export default function UsersPage() {
                       <div className="nk-tb-col tb-col-lg">
                         <StatusBadge status={user.is_active ? 'active' : 'inactive'} />
                       </div>
+                      <div className="nk-tb-col tb-col-lg">
+                        <span className="tb-amount">
+                          {user.permissions && user.permissions.length > 0 
+                            ? user.permissions.map(permission => 
+                                permission.charAt(0).toUpperCase() + permission.slice(1).replace('_', ' ')
+                              ).join(', ')
+                            : 'No permissions'
+                          }
+                        </span>
+                      </div>
                       <div className="nk-tb-col tb-col-md">
                         <span>{user.lastLogin}</span>
                       </div>
-                      <UserActionMenu 
+                      <UserActionMenu
                         user={user}
                         onEdit={handleEditUser}
                         onDelete={handleDeleteUser}
@@ -942,8 +934,8 @@ export default function UsersPage() {
                   <div className="g">
                     <ul className="pagination justify-content-center justify-content-md-start">
                       <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
-                        <a 
-                          className="page-link" 
+                        <a
+                          className="page-link"
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
@@ -955,8 +947,8 @@ export default function UsersPage() {
                       </li>
                       {[...Array(pagination.totalPages)].map((_, i) => (
                         <li key={i} className={`page-item ${pagination.currentPage === i + 1 ? 'active' : ''}`}>
-                          <a 
-                            className="page-link" 
+                          <a
+                            className="page-link"
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
@@ -968,8 +960,8 @@ export default function UsersPage() {
                         </li>
                       ))}
                       <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
-                        <a 
-                          className="page-link" 
+                        <a
+                          className="page-link"
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
@@ -985,8 +977,8 @@ export default function UsersPage() {
                     <div className="pagination-goto d-flex justify-content-center justify-content-md-end gx-3">
                       <div>Page</div>
                       <div>
-                        <select 
-                          className="form-control form-control-sm" 
+                        <select
+                          className="form-control form-control-sm"
                           value={pagination.currentPage}
                           onChange={(e) => handlePageChange(Number(e.target.value))}
                         >
@@ -1005,14 +997,28 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Add User Modal - DashLite Theme Structure */}
+      {/* User Modal - DashLite Theme Structure (Create/Edit) */}
       {showModal && (
         <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
           <div className="modal-dialog modal-xl" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Add New User</h5>
-                <a href="#" className="close" onClick={() => setShowModal(false)} aria-label="Close">
+                <h5 className="modal-title">{editingUser ? 'Edit User' : 'Add New User'}</h5>
+                <a href="#" className="close" onClick={() => {
+                  setShowModal(false);
+                  setEditingUser(null);
+                  setFormData({
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    client_id: null,
+                    first_name: '',
+                    last_name: '',
+                    role: 'customers',
+                    permissions: [],
+                    is_active: true
+                  });
+                }} aria-label="Close">
                   <em className="icon ni ni-cross"></em>
                 </a>
               </div>
@@ -1032,7 +1038,7 @@ export default function UsersPage() {
                             className="form-control"
                             id="first_name"
                             value={formData.first_name}
-                            onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                             required
                             placeholder="Enter first name"
                           />
@@ -1048,7 +1054,7 @@ export default function UsersPage() {
                             className="form-control"
                             id="last_name"
                             value={formData.last_name}
-                            onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                             required
                             placeholder="Enter last name"
                           />
@@ -1064,29 +1070,48 @@ export default function UsersPage() {
                             className="form-control"
                             id="email"
                             value={formData.email}
-                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             required
                             placeholder="user@example.com"
                           />
                         </div>
                       </div>
                     </div>
-                     <div className="col-md-4">
+                    <div className="col-md-4">
                       <div className="form-group">
-                        <label className="form-label" htmlFor="first_name">Password *</label>
+                        <label className="form-label" htmlFor="password">
+                          {editingUser ? 'Password (leave blank to keep current)' : 'Password *'}
+                        </label>
                         <div className="form-control-wrap">
                           <input
-                            type="text"
+                            type="password"
                             className="form-control"
                             id="password"
                             value={formData.password}
-                            onChange={(e) => setFormData({...formData, password: e.target.value})}
-                            required
-                            placeholder="Enter password"
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            required={!editingUser}
+                            placeholder={editingUser ? "Enter new password (optional)" : "Enter password"}
                           />
                         </div>
                       </div>
                     </div>
+                    {editingUser && (
+                      <div className="col-md-4">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="password"
+                              className="form-control"
+                              id="confirmPassword"
+                              value={formData.confirmPassword}
+                              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                              placeholder="Confirm new password"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="col-md-4">
                       <div className="form-group">
                         <label className="form-label" htmlFor="role">Select Role *</label>
@@ -1131,26 +1156,31 @@ export default function UsersPage() {
                     <div className="col-12">
                       <h6 className="overline-title text-primary-alt">Permissions</h6>
                     </div>
-                    <div className="col-12">
-                      <div className="form-group">
-                        <div className="custom-control-group">
-                          {availablePermissions.map(permission => (
-                            <div key={permission} className="custom-control custom-checkbox">
-                              <input
-                                type="checkbox"
-                                className="custom-control-input"
-                                id={`permission-${permission}`}
-                                checked={formData.permissions.includes(permission)}
-                                onChange={() => handlePermissionChange(permission)}
-                              />
-                              <label className="custom-control-label" htmlFor={`permission-${permission}`}>
-                                {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="col-12">
+  <div className="form-group">
+    <div className="custom-control-group">
+      {Array.isArray(Pages) && Pages.map((permission) => (
+        <div key={permission.path} className="custom-control custom-checkbox">
+          <input
+            type="checkbox"
+            className="custom-control-input"
+            id={`permission-${permission.path}`}
+            checked={formData.permissions.includes(permission.path)}
+            onChange={() => handlePermissionChange(permission.path)}
+          />
+          <label
+            className="custom-control-label"
+            htmlFor={`permission-${permission.path}`}
+          >
+            {permission.label}
+          </label>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+
 
                     {/* Account Status */}
                     <div className="col-4">
@@ -1173,7 +1203,7 @@ export default function UsersPage() {
                       </div>
                     </div>
 
-                  
+
 
                     {/* Form Actions */}
                     {/* <UserFormActions 
@@ -1183,29 +1213,43 @@ export default function UsersPage() {
                       submitLoadingText="Creating User..."
                     /> */}
                   </div>
-                      <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
-                    onClick={() => setShowModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary" 
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm mr-2"></span>
-                        Creating...
-                      </>
-                    ) : (
-                      'Create Customer'
-                    )}
-                  </button>
-                </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowModal(false);
+                        setEditingUser(null);
+                        setFormData({
+                          email: '',
+                          password: '',
+                          confirmPassword: '',
+                          client_id: null,
+                          first_name: '',
+                          last_name: '',
+                          role: 'customers',
+                          permissions: [],
+                          is_active: true
+                        });
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm mr-2"></span>
+                          {editingUser ? 'Updating...' : 'Creating...'}
+                        </>
+                      ) : (
+                        editingUser ? 'Update User' : 'Create User'
+                      )}
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
@@ -1242,9 +1286,9 @@ export default function UsersPage() {
                     />
                   </div>
                   <div className="form-note">
-                    <strong>Excel Format:</strong> Email, First Name, Last Name, Role, Status, Permissions, Password<br/>
-                    <strong>Valid Roles:</strong> superAdmin, moderator, customers, customerUsers<br/>
-                    <strong>Valid Status:</strong> active, inactive<br/>
+                    <strong>Excel Format:</strong> Email, First Name, Last Name, Role, Status, Permissions, Password<br />
+                    <strong>Valid Roles:</strong> superAdmin, moderator, customers, customerUsers<br />
+                    <strong>Valid Status:</strong> active, inactive<br />
                     <strong>Import Behavior:</strong>
                     <ul className="mt-2">
                       <li>✅ <strong>New users</strong> will be created with provided data</li>
@@ -1256,9 +1300,9 @@ export default function UsersPage() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-outline-light" 
+                <button
+                  type="button"
+                  className="btn btn-outline-light"
                   onClick={() => setShowImportModal(false)}
                 >
                   Cancel
@@ -1269,7 +1313,6 @@ export default function UsersPage() {
         </div>
       )}
       {showImportModal && <div className="modal-backdrop fade show"></div>}
-
 
     </div>
   );

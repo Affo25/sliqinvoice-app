@@ -1,24 +1,35 @@
-'use client';
-import Link from 'next/link';
-import { useState } from 'react';
+"use client";
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, clearError } from '../../../redux/slices/authSlice'; // Adjust path if needed
+import { useRouter } from 'next/navigation';
+import Link from "next/link";
+import { showToast } from '../../../lib/toast';
 
-export default function AdminLoginPage() {
+
+export default function LoginPage() {
+  const dispatch = useDispatch();
+  const router = useRouter();
+
+  const { loading, error, isAuthenticated } = useSelector(state => state.auth);
+
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    role: 'superAdmin',
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Add authentication logic here
-    setTimeout(() => {
-      setIsLoading(false);
-      // Redirect to admin dashboard
-      window.location.href = '/admin/dashboard';
-    }, 2000);
+    const resultAction = await dispatch(loginUser(formData));
+
+    if (loginUser.fulfilled.match(resultAction)) {
+      showToast("Login successful!",'success');
+      setTimeout(() => router.push("/dashboard"), 1500);
+    } else {
+      showToast(resultAction.payload || "Login failed",'error');
+    }
   };
 
   const handleInputChange = (e) => {
@@ -29,33 +40,35 @@ export default function AdminLoginPage() {
     }));
   };
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
   return (
-    <div className="nk-app-root">
-      <div className="nk-split nk-split-page nk-split-md">
-        <div className="nk-split-content nk-block-area nk-block-area-column nk-auth-container">
-          <div className="absolute-top-right d-lg-none p-3 p-sm-5">
-            <a href="#" className="toggle btn-white btn btn-icon btn-light" data-target="athPromo">
-              <em className="icon ni ni-info"></em>
-            </a>
-          </div>
-          <div className="nk-block nk-block-middle nk-auth-body">
-            <div className="brand-logo pb-5">
-              <Link href="/" className="logo-link">
-                <img className="logo-light logo-img logo-img-lg" src="/images/logo.png" srcSet="/images/logo2x.png 2x" alt="logo" />
-                <img className="logo-dark logo-img logo-img-lg" src="/images/logo-dark.png" srcSet="/images/logo-dark2x.png 2x" alt="logo-dark" />
-              </Link>
-            </div>
-            <div className="nk-block-head">
-              <div className="nk-block-head-content">
-                <h5 className="nk-block-title">Admin Sign-In</h5>
-                <div className="nk-block-des">
-                  <p>Access the SliqInvoice admin panel using your credentials.</p>
-                </div>
+    <div className="nk-app-root bg-dark nk-theme-color-a1">
+      {loading && (
+        <div className="overlay-loader">
+          <div className="spinner-border text-primary" role="status"></div>
+        </div>
+      )}
+      <div className="nk-main">
+        <div className="nk-wrap nk-wrap-nosidebar">
+          <div className="nk-content">
+            <div className="nk-block nk-block-middle nk-auth-body wide-xs">
+              <div className="brand-logo pb-4 text-center">
+                <a href="/" className="logo-link">
+                  <img className="logo-light logo-img logo-img-lg" src="/images/logo.png" alt="logo" />
+                  <img className="logo-dark logo-img logo-img-lg" src="/images/logo-dark.png" alt="logo-dark" />
+                </a>
               </div>
-            </div>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
+
+              <div className="card card-bordered">
+                <div className="card-inner card-inner-lg">
+                  <h4 className="nk-block-title text-center">Sign-In</h4>
+                  <form onSubmit={handleSubmit}>
+                    <div className="form-group">
                 <div className="form-label-group">
                   <label className="form-label" htmlFor="admin-email">Email or Username</label>
                   <a className="link link-primary link-sm" tabIndex="-1" href="#">Need Help?</a>
@@ -71,174 +84,73 @@ export default function AdminLoginPage() {
                   required
                 />
               </div>
-              
-              <div className="form-group">
-                <div className="form-label-group">
-                  <label className="form-label" htmlFor="admin-password">Password</label>
-                  <Link href="/admin/reset-password" className="link link-primary link-sm" tabIndex="-1">
-                    Forgot Password?
-                  </Link>
-                </div>
-                <div className="form-control-wrap">
-                  <a 
-                    tabIndex="-1" 
-                    href="#" 
-                    className="form-icon form-icon-right passcode-switch" 
-                    data-target="admin-password"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowPassword(!showPassword);
-                    }}
-                  >
-                    <em className={`passcode-icon icon-show icon ni ni-eye ${showPassword ? 'd-none' : ''}`}></em>
-                    <em className={`passcode-icon icon-hide icon ni ni-eye-off ${!showPassword ? 'd-none' : ''}`}></em>
-                  </a>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className="form-control form-control-lg"
-                    id="admin-password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder="Enter your admin password"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <button 
-                  type="submit" 
-                  className="btn btn-lg btn-primary btn-block"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Signing in...' : 'Sign in to Admin Panel'}
-                </button>
-              </div>
-            </form>
-            
-            <div className="form-note-s2 pt-4">
-              Not an admin? <Link href="/auth/customer-login">Customer Login</Link>
-            </div>
-            
-            <div className="text-center pt-4 pb-3">
-              <h6 className="overline-title overline-title-sap"><span>OR</span></h6>
-            </div>
-            
-            <ul className="nav justify-center gx-4">
-              <li className="nav-item">
-                <a className="nav-link" href="#">Google SSO</a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#">Microsoft AD</a>
-              </li>
-            </ul>
-            
-            <div className="text-center mt-5">
-              <span className="fw-500">
-                Need admin access? <a href="#">Request Access</a>
-              </span>
-            </div>
-          </div>
-          
-          <div className="nk-block nk-auth-footer">
-            <div className="nk-block-between">
-              <ul className="nav nav-sm">
-                <li className="nav-item">
-                  <a className="nav-link" href="#">Terms & Condition</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">Privacy Policy</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">Admin Help</a>
-                </li>
-                <li className="nav-item dropup">
-                  <a className="dropdown-toggle dropdown-indicator has-indicator nav-link" data-toggle="dropdown" data-offset="0,10">
-                    <small>English</small>
-                  </a>
-                  <div className="dropdown-menu dropdown-menu-sm dropdown-menu-right">
-                    <ul className="language-list">
-                      <li>
-                        <a href="#" className="language-item">
-                          <img src="/images/flags/english.png" alt="" className="language-flag" />
-                          <span className="language-name">English</span>
+                    <div className="form-group">
+                      <div className="form-label-group">
+                        <label className="form-label" htmlFor="admin-password">Password</label>
+                        <Link href="/admin/reset-password" className="link link-primary link-sm" tabIndex="-1">
+                          Forgot Password?
+                        </Link>
+                      </div>
+                      <div className="form-control-wrap">
+                        <a
+                          tabIndex="-1"
+                          href="#"
+                          className="form-icon form-icon-right passcode-switch"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setShowPassword(!showPassword);
+                          }}
+                        >
+                          <em className={`passcode-icon icon-show icon ni ni-eye ${showPassword ? 'd-none' : ''}`}></em>
+                          <em className={`passcode-icon icon-hide icon ni ni-eye-off ${!showPassword ? 'd-none' : ''}`}></em>
                         </a>
-                      </li>
-                      <li>
-                        <a href="#" className="language-item">
-                          <img src="/images/flags/spanish.png" alt="" className="language-flag" />
-                          <span className="language-name">Español</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#" className="language-item">
-                          <img src="/images/flags/french.png" alt="" className="language-flag" />
-                          <span className="language-name">Français</span>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="#" className="language-item">
-                          <img src="/images/flags/turkey.png" alt="" className="language-flag" />
-                          <span className="language-name">Türkçe</span>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-3">
-              <p>&copy; 2024 SliqInvoice Admin. All Rights Reserved.</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Right side promotional content */}
-        <div className="nk-split-content nk-split-stretch bg-lighter d-flex toggle-break-lg toggle-slide toggle-slide-right" data-content="athPromo" data-toggle-screen="lg" data-toggle-overlay="true">
-          <div className="slider-wrap w-100 w-max-550px p-3 p-sm-5 m-auto">
-            <div className="slider-init" data-slick='{"dots":true, "arrows":false}'>
-              <div className="slider-item">
-                <div className="nk-feature nk-feature-center">
-                  <div className="nk-feature-img">
-                    <img className="round" src="/images/slides/promo-a.png" srcSet="/images/slides/promo-a2x.png 2x" alt="" />
-                  </div>
-                  <div className="nk-feature-content py-4 p-sm-5">
-                    <h4>Admin Dashboard</h4>
-                    <p>Complete control over your SliqInvoice system. Manage users, monitor transactions, and configure system settings with ease.</p>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          className="form-control form-control-lg"
+                          id="admin-password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          placeholder="Enter your admin password"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <button type="submit" className="btn btn-lg btn-primary btn-block">
+                        Sign in
+                      </button>
+                    </div>
+                  </form>
+                  <div className="form-note-s2 text-center pt-4">
+                    New on our platform? <a href="/auth/register">Create an account</a>
                   </div>
                 </div>
               </div>
-              
-              <div className="slider-item">
-                <div className="nk-feature nk-feature-center">
-                  <div className="nk-feature-img">
-                    <img className="round" src="/images/slides/promo-b.png" srcSet="/images/slides/promo-b2x.png 2x" alt="" />
-                  </div>
-                  <div className="nk-feature-content py-4 p-sm-5">
-                    <h4>User Management</h4>
-                    <p>Efficiently manage customer accounts, permissions, and access levels. View detailed analytics and user activity logs.</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="slider-item">
-                <div className="nk-feature nk-feature-center">
-                  <div className="nk-feature-img">
-                    <img className="round" src="/images/slides/promo-c.png" srcSet="/images/slides/promo-c2x.png 2x" alt="" />
-                  </div>
-                  <div className="nk-feature-content py-4 p-sm-5">
-                    <h4>System Analytics</h4>
-                    <p>Comprehensive reporting and analytics dashboard. Track system performance, revenue, and user engagement metrics.</p>
-                  </div>
-                </div>
+
+              <div className="text-center pt-4 pb-3">
+                <p className="text-soft">&copy; 2025 SliqInvoice. All Rights Reserved.</p>
               </div>
             </div>
-            <div className="slider-dots"></div>
-            <div className="slider-arrows"></div>
           </div>
         </div>
       </div>
+      {/* Simple loader styling */}
+      <style jsx>{`
+        .overlay-loader {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.6);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      `}</style>
     </div>
   );
 }

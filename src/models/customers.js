@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 const CustomerSchema = new mongoose.Schema(
   {
     company_name: { type: String, required: true },
-    contact_email: { type: String, required: true },
+    contact_email: { type: String, required: true, unique: true },
     contact_phone: { type: String },
+    password: { type: String, required: true },
     address: { type: String },
     package_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -24,4 +25,4 @@ const CustomerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Customer || mongoose.model('Customers', CustomerSchema);
+export default mongoose.models.Customer || mongoose.model('Customer', CustomerSchema);

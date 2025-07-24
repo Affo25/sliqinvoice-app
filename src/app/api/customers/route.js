@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '../../../lib/mongodb';
 import Customer from '../../../models/customers';
+import User from '../../../models/user_models';
+import bcrypt from 'bcryptjs';
 
 // GET /api/customers - Fetch customers with filters and pagination
 export async function GET(request) {
@@ -112,6 +114,7 @@ export async function POST(request) {
       company_name,
       contact_email,
       contact_phone,
+      password,
       address,
       package_id,
       subscription_status,
@@ -119,9 +122,9 @@ export async function POST(request) {
     } = body;
 
     // Validate required fields
-    if (!company_name || !contact_email) {
+    if (!company_name || !contact_email || !password) {
       return NextResponse.json(
-        { success: false, message: 'Company name and contact email are required' },
+        { success: false, message: 'Company name, contact email, and password are required' },
         { status: 400 }
       );
     }
@@ -135,11 +138,16 @@ export async function POST(request) {
       );
     }
 
+    // Hash password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     // Create customer
     const newCustomer = new Customer({
       company_name,
       contact_email,
       contact_phone: contact_phone || '',
+      password: hashedPassword,
       address: address || '',
       package_id: package_id || null,
       subscription_status: subscription_status || 'active',
@@ -147,6 +155,32 @@ export async function POST(request) {
     });
 
     const savedCustomer = await newCustomer.save();
+
+    // Create corresponding user record
+    try {
+      // Extract names from company name or use defaults
+      const companyWords = company_name.trim().split(' ');
+      const firstName = companyWords[0] || 'Customer';
+      const lastName = companyWords.length > 1 ? companyWords.slice(1).join(' ') : 'User';
+
+      const newUser = new User({
+        email: contact_email,
+        password_hash: hashedPassword,
+        client_id: savedCustomer._id, // Link to customer ID
+        first_name: firstName,
+        last_name: lastName,
+        role: 'customers',
+        permissions: permissions || [],
+        is_active: subscription_status === 'active',
+      });
+
+      await newUser.save();
+      console.log('✅ User record created successfully for customer:', contact_email);
+    } catch (userError) {
+      console.error('⚠️ Failed to create user record for customer:', contact_email, userError);
+      // Don't fail the customer creation if user creation fails
+      // The customer is already saved, so we'll just log the error
+    }
 
     // Format response
     const formattedCustomer = {

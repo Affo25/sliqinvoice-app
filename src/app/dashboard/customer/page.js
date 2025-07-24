@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import {createUser} from '../../../redux/slices/usersSlice';
+
 import {
   fetchCustomers,
   createCustomer,
@@ -11,11 +13,12 @@ import {
   importCustomers,
   setFilters,
   clearFilters,
-  clearError
+  clearError,
+  setLoading
 } from '../../../redux/slices/customersSlice';
 import { showToast } from '../../../lib/toast';
 import { useSweetAlert } from '../../../components/SweetAlerts';
-import { CustomerActionMenu, BulkCustomerActions, CustomerFormActions } from '../../../components/CustomerActions';
+import { CustomerActionMenu, BulkCustomerActions } from '../../../components/CustomerActions';
 import '../../../app/globals.css';
 
 export default function CustomersPage() {
@@ -47,6 +50,7 @@ export default function CustomersPage() {
     company_name: '',
     contact_email: '',
     contact_phone: '',
+    password: '',
     address: '',
     package_id: '',
     subscription_status: 'active',
@@ -69,13 +73,58 @@ export default function CustomersPage() {
 
   // Load customers on component mount
   useEffect(() => {
-    dispatch(fetchCustomers(filters));
+    console.log('Component mounted, fetching customers with filters:', filters);
+    
+    // Test if API is reachable first
+    const testAPI = async () => {
+      try {
+        console.log('🧪 Testing API connectivity...');
+        const response = await fetch('/api/customers?limit=1');
+        console.log('🧪 API Test Response:', response.status, response.ok);
+        
+        if (response.ok) {
+          console.log('✅ API is reachable, proceeding with Redux fetch');
+          const fetchPromise = dispatch(fetchCustomers(filters));
+          
+          // Add a timeout fallback to prevent infinite loading
+          const timeout = setTimeout(() => {
+            console.warn('⚠️ Fetch customers timeout - forcing loading to false');
+            dispatch(setLoading(false));
+          }, 15000); // 15 second timeout
+          
+          fetchPromise.finally(() => {
+            clearTimeout(timeout);
+          });
+        } else {
+          console.error('❌ API not reachable, setting error state');
+          dispatch(setLoading(false));
+          showToast('Failed to connect to server', 'error');
+        }
+      } catch (error) {
+        console.error('❌ API connectivity test failed:', error);
+        dispatch(setLoading(false));
+        showToast('Network error: ' + error.message, 'error');
+      }
+    };
+    
+    testAPI();
   }, [dispatch]);
 
-  // Fetch customers when filters change
+  // Fetch customers when filters change (but not on first mount)
   useEffect(() => {
+    console.log('Filters changed, fetching customers:', filters);
     dispatch(fetchCustomers(filters));
-  }, [dispatch, filters]);
+  }, [dispatch, JSON.stringify(filters)]); // Use JSON.stringify to prevent infinite loop
+
+  // Debug log for state changes
+  useEffect(() => {
+    console.log('Customer state updated:', { 
+      customersCount: customers?.length || 0, 
+      loading, 
+      error, 
+      totalCount 
+    });
+  }, [customers, loading, error, totalCount]);
 
   // Clear error on unmount
   useEffect(() => {
@@ -98,8 +147,8 @@ export default function CustomersPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!formData.company_name || !formData.contact_email) {
-      showToast('Company name and contact email are required!', 'error');
+    if (!formData.company_name || !formData.contact_email || !formData.password) {
+      showToast('Company name, contact email, and password are required!', 'error');
       setIsSubmitting(false);
       return;
     }
@@ -108,6 +157,13 @@ export default function CustomersPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.contact_email)) {
       showToast('Please enter a valid email address!', 'error');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      showToast('Password must be at least 6 characters long!', 'error');
       setIsSubmitting(false);
       return;
     }
@@ -120,6 +176,7 @@ export default function CustomersPage() {
         company_name: '',
         contact_email: '',
         contact_phone: '',
+        password: '',
         address: '',
         package_id: '',
         subscription_status: 'active',
@@ -142,6 +199,7 @@ export default function CustomersPage() {
       company_name: customer.company_name,
       contact_email: customer.contact_email,
       contact_phone: customer.contact_phone || '',
+      password: '', // Don't show existing password for security
       address: customer.address || '',
       package_id: customer.package_id || '',
       subscription_status: customer.subscription_status,
@@ -168,6 +226,13 @@ export default function CustomersPage() {
       setIsSubmitting(false);
       return;
     }
+
+    // Validate password if it's being changed
+    if (formData.password && formData.password.length < 6) {
+      showToast('Password must be at least 6 characters long if changing!', 'error');
+      setIsSubmitting(false);
+      return;
+    }
     
     try {
       await dispatch(updateCustomer({ id: editingCustomer._id, customerData: formData })).unwrap();
@@ -177,6 +242,7 @@ export default function CustomersPage() {
         company_name: '',
         contact_email: '',
         contact_phone: '',
+        password: '',
         address: '',
         package_id: '',
         subscription_status: 'active',
@@ -203,6 +269,8 @@ export default function CustomersPage() {
   };
 
   const handleSelectAll = () => {
+    if (!customers || customers.length === 0) return;
+    
     if (selectedCustomers.length === customers.length) {
       setSelectedCustomers([]);
     } else {
@@ -310,6 +378,23 @@ export default function CustomersPage() {
     }));
   };
 
+  // Handle password change specifically
+  const handlePasswordChange = (customer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      company_name: customer.company_name,
+      contact_email: customer.contact_email,
+      contact_phone: customer.contact_phone || '',
+      password: '', // Empty for password change
+      address: customer.address || '',
+      package_id: customer.package_id || '',
+      subscription_status: customer.subscription_status,
+      permissions: customer.permissions || []
+    });
+    setShowEditModal(true);
+    showToast(`Opening edit form for ${customer.company_name} - You can change the password here`, 'info');
+  };
+
   // Status badge component
   const StatusBadge = ({ status }) => {
     const getStatusClass = (status) => {
@@ -327,6 +412,70 @@ export default function CustomersPage() {
       </span>
     );
   };
+
+  // Password display component - Shows masked password with change option
+  const PasswordDisplay = ({ customer }) => {
+    return (
+      <div className="d-flex align-items-center">
+        <div className="d-flex flex-column">
+          <span className="text-muted font-weight-bold" style={{ letterSpacing: '2px', fontSize: '14px' }}>
+            ••••••••
+          </span>
+          <small className="text-soft">Protected</small>
+        </div>
+        <div className="ml-2">
+          <button 
+            className="btn btn-sm btn-icon btn-outline-gray btn-tooltip" 
+            title={`Change password for ${customer.company_name}`}
+            onClick={() => handlePasswordChange(customer)}
+          >
+            <em className="icon ni ni-lock-alt"></em>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Show error if there's an error
+  if (error) {
+    return (
+      <div className="nk-content-inner">
+        <div className="nk-content-body">
+          <div className="nk-block-head nk-block-head-sm">
+            <div className="nk-block-between">
+              <div className="nk-block-head-content">
+                <h3 className="nk-block-title page-title">Customers</h3>
+              </div>
+            </div>
+          </div>
+          <div className="nk-block">
+            <div className="card card-bordered card-stretch">
+              <div className="card-inner-group">
+                <div className="card-inner p-0">
+                  <div className="text-center p-5">
+                    <div className="text-danger">
+                      <em className="icon ni ni-alert-circle" style={{fontSize: '3rem'}}></em>
+                      <h5 className="mt-3">Error Loading Customers</h5>
+                      <p>{error}</p>
+                      <button 
+                        className="btn btn-primary mt-3"
+                        onClick={() => {
+                          dispatch(clearError());
+                          dispatch(fetchCustomers(filters));
+                        }}
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -639,7 +788,7 @@ export default function CustomersPage() {
                           type="checkbox"
                           className="custom-control-input"
                           id="uid"
-                          checked={selectedCustomers.length === customers.length && customers.length > 0}
+                          checked={customers && customers.length > 0 && selectedCustomers.length === customers.length}
                           onChange={handleSelectAll}
                         />
                         <label className="custom-control-label" htmlFor="uid"></label>
@@ -678,6 +827,9 @@ export default function CustomersPage() {
                         )}
                       </span>
                     </div>
+                    <div className="nk-tb-col tb-col-md">
+                      <span className="sub-text">Password</span>
+                    </div>
                     <div className="nk-tb-col tb-col-lg">
                       <span 
                         className="sub-text cursor-pointer"
@@ -704,51 +856,73 @@ export default function CustomersPage() {
                     </div>
                   </div>
 
-                  {customers.map((customer) => (
-                    <div key={customer.id} className="nk-tb-item">
-                      <div className="nk-tb-col nk-tb-col-check">
-                        <div className="custom-control custom-control-sm custom-checkbox notext">
-                          <input
-                            type="checkbox"
-                            className="custom-control-input"
-                            id={`uid${customer.id}`}
-                            checked={selectedCustomers.includes(customer.id)}
-                            onChange={() => handleSelectCustomer(customer.id)}
-                          />
-                          <label className="custom-control-label" htmlFor={`uid${customer.id}`}></label>
-                        </div>
-                      </div>
-                      <div className="nk-tb-col">
-                        <div className="user-card">
-                          <div className="user-avatar bg-primary">
-                            <span>{customer.company_name.charAt(0)}</span>
-                          </div>
-                          <div className="user-info">
-                            <span className="tb-lead">{customer.company_name} <span className="dot dot-success d-lg-none ml-1"></span></span>
-                            <span>{customer.address || 'No address'}</span>
+                  {customers && customers.length > 0 ? (
+                    customers.map((customer) => (
+                      <div key={customer.id} className="nk-tb-item">
+                        <div className="nk-tb-col nk-tb-col-check">
+                          <div className="custom-control custom-control-sm custom-checkbox notext">
+                            <input
+                              type="checkbox"
+                              className="custom-control-input"
+                              id={`uid${customer.id}`}
+                              checked={selectedCustomers.includes(customer.id)}
+                              onChange={() => handleSelectCustomer(customer.id)}
+                            />
+                            <label className="custom-control-label" htmlFor={`uid${customer.id}`}></label>
                           </div>
                         </div>
+                        <div className="nk-tb-col">
+                          <div className="user-card">
+                            <div className="user-avatar bg-primary">
+                              <span>{customer.company_name.charAt(0)}</span>
+                            </div>
+                            <div className="user-info">
+                              <span className="tb-lead">{customer.company_name} <span className="dot dot-success d-lg-none ml-1"></span></span>
+                              <span>{customer.address || 'No address'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="nk-tb-col tb-col-mb">
+                          <span className="tb-amount">{customer.contact_email}</span>
+                          <span className="tb-amount-sm">{customer.permissions?.join(', ') || 'No permissions'}</span>
+                        </div>
+                        <div className="nk-tb-col tb-col-md">
+                          <span>{customer.contact_phone || 'N/A'}</span>
+                        </div>
+                        <div className="nk-tb-col tb-col-md">
+                          <PasswordDisplay customer={customer} />
+                        </div>
+                        <div className="nk-tb-col tb-col-lg">
+                          <StatusBadge status={customer.subscription_status} />
+                        </div>
+                        <div className="nk-tb-col tb-col-md">
+                          <span>{customer.createdAt}</span>
+                        </div>
+                        <CustomerActionMenu 
+                          customer={customer}
+                          onEdit={handleEditCustomer}
+                          onDelete={handleDeleteCustomer}
+                        />
                       </div>
-                      <div className="nk-tb-col tb-col-mb">
-                        <span className="tb-amount">{customer.contact_email}</span>
-                        <span className="tb-amount-sm">{customer.permissions?.join(', ') || 'No permissions'}</span>
+                    ))
+                  ) : (
+                    <div className="nk-tb-item">
+                      <div className="nk-tb-col text-center py-5" style={{gridColumn: '1 / -1'}}>
+                        <div className="text-muted">
+                          <em className="icon ni ni-users" style={{fontSize: '3rem'}}></em>
+                          <h5 className="mt-3">No Customers Found</h5>
+                          <p>There are no customers to display. Try adjusting your filters or add a new customer.</p>
+                          <button 
+                            className="btn btn-primary mt-3"
+                            onClick={() => setShowModal(true)}
+                          >
+                            <em className="icon ni ni-plus"></em>
+                            <span>Add First Customer</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span>{customer.contact_phone || 'N/A'}</span>
-                      </div>
-                      <div className="nk-tb-col tb-col-lg">
-                        <StatusBadge status={customer.subscription_status} />
-                      </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span>{customer.createdAt}</span>
-                      </div>
-                      <CustomerActionMenu 
-                        customer={customer}
-                        onEdit={handleEditCustomer}
-                        onDelete={handleDeleteCustomer}
-                      />
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -819,250 +993,355 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* Add Customer Modal */}
+        {/* Add Customer Modal - DashLite Theme Structure */}
         {showModal && (
-          <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
-            <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
+          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+            <div className="modal-dialog modal-xl" role="document">
               <div className="modal-content">
-                <a href="#" className="close" onClick={() => setShowModal(false)}><em className="icon ni ni-cross-sm"></em></a>
-                <div className="modal-body modal-body-lg text-center">
-                  <div className="nk-modal">
-                    <em className="nk-modal-icon icon icon-circle icon-circle-xxl ni ni-building bg-primary"></em>
-                    <h4 className="nk-modal-title">Add Customer</h4>
-                    <div className="nk-modal-text">
-                      <div className="caption-text">Create a new customer account with company details.</div>
-                      <form className="form-validate is-alter" onSubmit={handleSubmit}>
-                        <div className="row gy-4">
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="company-name">Company Name</label>
-                              <input 
-                                type="text" 
-                                className="form-control form-control-lg" 
-                                id="company-name"
-                                value={formData.company_name}
-                                onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                                placeholder="Enter company name" 
-                                required 
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="contact-email">Contact Email</label>
-                              <input 
-                                type="email" 
-                                className="form-control form-control-lg" 
-                                id="contact-email"
-                                value={formData.contact_email}
-                                onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                                placeholder="Enter email address" 
-                                required 
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="contact-phone">Contact Phone</label>
-                              <input 
-                                type="tel" 
-                                className="form-control form-control-lg" 
-                                id="contact-phone"
-                                value={formData.contact_phone}
-                                onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
-                                placeholder="Enter phone number" 
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="subscription-status">Subscription Status</label>
-                              <select 
-                                className="form-control form-control-lg" 
-                                id="subscription-status"
-                                value={formData.subscription_status}
-                                onChange={(e) => setFormData({...formData, subscription_status: e.target.value})}
-                              >
-                                {subscriptionStatuses.map(status => (
-                                  <option key={status.value} value={status.value}>
-                                    {status.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                          <div className="col-12">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="address">Address</label>
-                              <textarea 
-                                className="form-control form-control-lg" 
-                                id="address"
-                                value={formData.address}
-                                onChange={(e) => setFormData({...formData, address: e.target.value})}
-                                placeholder="Enter customer address"
-                                rows="3"
-                              />
-                            </div>
-                          </div>
-                          <div className="col-12">
-                            <div className="form-group">
-                              <label className="form-label">Permissions</label>
-                              <div className="custom-control-group g-3 align-center">
-                                {availablePermissions.map(permission => (
-                                  <div key={permission} className="custom-control custom-control-sm custom-checkbox">
-                                    <input
-                                      type="checkbox"
-                                      className="custom-control-input"
-                                      id={permission}
-                                      checked={formData.permissions.includes(permission)}
-                                      onChange={() => handlePermissionChange(permission)}
-                                    />
-                                    <label className="custom-control-label" htmlFor={permission}>
-                                      {permission.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                    </label>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <CustomerFormActions 
-                            isSubmitting={isSubmitting}
-                            onCancel={() => setShowModal(false)}
-                            submitText="Add Customer"
-                            submitLoadingText="Creating Customer..."
-                          />
-                        </div>
-                      </form>
-                    </div>
-                  </div>
+                <div className="modal-header">
+                  <h5 className="modal-title">Add New Customer</h5>
+                  <a href="#" className="close" onClick={() => setShowModal(false)} aria-label="Close">
+                    <em className="icon ni ni-cross"></em>
+                  </a>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+                <div className="modal-body modal-body-xl">
+                  <form onSubmit={handleSubmit} className="form-validate is-alter">
+                    <div className="row g-3">
+                      {/* Company Information Section */}
+                      <div className="col-12">
+                        <h6 className="overline-title text-primary-alt">Company Information</h6>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="company_name">Company Name *</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="text"
+                              className="form-control"
+                              id="company_name"
+                              value={formData.company_name}
+                              onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                              required
+                              placeholder="Enter company name"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="contact_email">Contact Email *</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="email"
+                              className="form-control"
+                              id="contact_email"
+                              value={formData.contact_email}
+                              onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                              required
+                              placeholder="company@example.com"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="contact_phone">Contact Phone</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="tel"
+                              className="form-control"
+                              id="contact_phone"
+                              value={formData.contact_phone}
+                              onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
+                              placeholder="Enter phone number"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="password">Password *</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="password"
+                              className="form-control"
+                              id="password"
+                              value={formData.password}
+                              onChange={(e) => setFormData({...formData, password: e.target.value})}
+                              required
+                              placeholder="Enter password (min 6 characters)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="subscription_status">Subscription Status *</label>
+                          <div className="form-control-wrap">
+                            <select
+                              id="subscription_status"
+                              className="form-control"
+                              value={formData.subscription_status}
+                              onChange={(e) => setFormData({ ...formData, subscription_status: e.target.value })}
+                              required
+                            >
+                              {subscriptionStatuses.map(status => (
+                                <option key={status.value} value={status.value}>
+                                  {status.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="address">Address</label>
+                          <div className="form-control-wrap">
+                            <textarea
+                              className="form-control"
+                              id="address"
+                              value={formData.address}
+                              onChange={(e) => setFormData({...formData, address: e.target.value})}
+                              placeholder="Enter customer address"
+                              rows="3"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-        {/* Edit Customer Modal */}
-        {showEditModal && (
-          <div className="modal fade show" tabIndex="-1" style={{ display: 'block' }}>
-            <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
-              <div className="modal-content">
-                <a href="#" className="close" onClick={() => setShowEditModal(false)}><em className="icon ni ni-cross-sm"></em></a>
-                <div className="modal-body modal-body-lg text-center">
-                  <div className="nk-modal">
-                    <em className="nk-modal-icon icon icon-circle icon-circle-xxl ni ni-building bg-warning"></em>
-                    <h4 className="nk-modal-title">Edit Customer</h4>
-                    <div className="nk-modal-text">
-                      <div className="caption-text">Update customer information and settings.</div>
-                      <form className="form-validate is-alter" onSubmit={handleUpdateCustomer}>
-                        <div className="row gy-4">
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="edit-company-name">Company Name</label>
-                              <input 
-                                type="text" 
-                                className="form-control form-control-lg" 
-                                id="edit-company-name"
-                                value={formData.company_name}
-                                onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                                placeholder="Enter company name" 
-                                required 
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="edit-contact-email">Contact Email</label>
-                              <input 
-                                type="email" 
-                                className="form-control form-control-lg" 
-                                id="edit-contact-email"
-                                value={formData.contact_email}
-                                onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                                placeholder="Enter email address" 
-                                required 
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="edit-contact-phone">Contact Phone</label>
-                              <input 
-                                type="tel" 
-                                className="form-control form-control-lg" 
-                                id="edit-contact-phone"
-                                value={formData.contact_phone}
-                                onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
-                                placeholder="Enter phone number" 
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-6">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="edit-subscription-status">Subscription Status</label>
-                              <select 
-                                className="form-control form-control-lg" 
-                                id="edit-subscription-status"
-                                value={formData.subscription_status}
-                                onChange={(e) => setFormData({...formData, subscription_status: e.target.value})}
-                              >
-                                {subscriptionStatuses.map(status => (
-                                  <option key={status.value} value={status.value}>
-                                    {status.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                          <div className="col-12">
-                            <div className="form-group">
-                              <label className="form-label" htmlFor="edit-address">Address</label>
-                              <textarea 
-                                className="form-control form-control-lg" 
-                                id="edit-address"
-                                value={formData.address}
-                                onChange={(e) => setFormData({...formData, address: e.target.value})}
-                                placeholder="Enter customer address"
-                                rows="3"
-                              />
-                            </div>
-                          </div>
-                          <div className="col-12">
-                            <div className="form-group">
-                              <label className="form-label">Permissions</label>
-                              <div className="custom-control-group g-3 align-center">
-                                {availablePermissions.map(permission => (
-                                  <div key={permission} className="custom-control custom-control-sm custom-checkbox">
-                                    <input
-                                      type="checkbox"
-                                      className="custom-control-input"
-                                      id={`edit-${permission}`}
-                                      checked={formData.permissions.includes(permission)}
-                                      onChange={() => handlePermissionChange(permission)}
-                                    />
-                                    <label className="custom-control-label" htmlFor={`edit-${permission}`}>
-                                      {permission.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                    </label>
-                                  </div>
-                                ))}
+                      {/* Permissions Section */}
+                      <div className="col-12">
+                        <h6 className="overline-title text-primary-alt">Permissions</h6>
+                      </div>
+                      <div className="col-12">
+                        <div className="form-group">
+                          <div className="custom-control-group">
+                            {availablePermissions.map(permission => (
+                              <div key={permission} className="custom-control custom-checkbox">
+                                <input
+                                  type="checkbox"
+                                  className="custom-control-input"
+                                  id={`permission-${permission}`}
+                                  checked={formData.permissions.includes(permission)}
+                                  onChange={() => handlePermissionChange(permission)}
+                                />
+                                <label className="custom-control-label" htmlFor={`permission-${permission}`}>
+                                  {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </label>
                               </div>
-                            </div>
+                            ))}
                           </div>
-                          <CustomerFormActions 
-                            isSubmitting={isSubmitting}
-                            onCancel={() => setShowEditModal(false)}
-                            submitText="Update Customer"
-                            submitLoadingText="Updating Customer..."
-                            isEdit={true}
-                          />
                         </div>
-                      </form>
+                      </div>
                     </div>
-                  </div>
+                    
+                    <div className="modal-footer">
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary" 
+                        onClick={() => setShowModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm mr-2"></span>
+                            Creating...
+                          </>
+                        ) : (
+                          'Create Customer'
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
           </div>
         )}
+        {showModal && <div className="modal-backdrop fade show"></div>}
+
+        {/* Edit Customer Modal - DashLite Theme Structure */}
+        {showEditModal && (
+          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+            <div className="modal-dialog modal-xl" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Edit Customer</h5>
+                  <a href="#" className="close" onClick={() => setShowEditModal(false)} aria-label="Close">
+                    <em className="icon ni ni-cross"></em>
+                  </a>
+                </div>
+                <div className="modal-body modal-body-xl">
+                  <form onSubmit={handleUpdateCustomer} className="form-validate is-alter">
+                    <div className="row g-3">
+                      {/* Company Information Section */}
+                      <div className="col-12">
+                        <h6 className="overline-title text-primary-alt">Company Information</h6>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="edit_company_name">Company Name *</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="text"
+                              className="form-control"
+                              id="edit_company_name"
+                              value={formData.company_name}
+                              onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                              required
+                              placeholder="Enter company name"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="edit_contact_email">Contact Email *</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="email"
+                              className="form-control"
+                              id="edit_contact_email"
+                              value={formData.contact_email}
+                              onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                              required
+                              placeholder="company@example.com"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="edit_contact_phone">Contact Phone</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="tel"
+                              className="form-control"
+                              id="edit_contact_phone"
+                              value={formData.contact_phone}
+                              onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
+                              placeholder="Enter phone number"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="edit_password">Password</label>
+                          <div className="form-control-wrap">
+                            <input
+                              type="password"
+                              className="form-control"
+                              id="edit_password"
+                              value={formData.password}
+                              onChange={(e) => setFormData({...formData, password: e.target.value})}
+                              placeholder="Leave blank to keep current password"
+                            />
+                          </div>
+                          <div className="form-note">
+                            <small>Leave blank to keep the current password. Minimum 6 characters if changing.</small>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="edit_subscription_status">Subscription Status *</label>
+                          <div className="form-control-wrap">
+                            <select
+                              id="edit_subscription_status"
+                              className="form-control"
+                              value={formData.subscription_status}
+                              onChange={(e) => setFormData({ ...formData, subscription_status: e.target.value })}
+                              required
+                            >
+                              {subscriptionStatuses.map(status => (
+                                <option key={status.value} value={status.value}>
+                                  {status.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="edit_address">Address</label>
+                          <div className="form-control-wrap">
+                            <textarea
+                              className="form-control"
+                              id="edit_address"
+                              value={formData.address}
+                              onChange={(e) => setFormData({...formData, address: e.target.value})}
+                              placeholder="Enter customer address"
+                              rows="3"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Permissions Section */}
+                      <div className="col-12">
+                        <h6 className="overline-title text-primary-alt">Permissions</h6>
+                      </div>
+                      <div className="col-12">
+                        <div className="form-group">
+                          <div className="custom-control-group">
+                            {availablePermissions.map(permission => (
+                              <div key={permission} className="custom-control custom-checkbox">
+                                <input
+                                  type="checkbox"
+                                  className="custom-control-input"
+                                  id={`edit-permission-${permission}`}
+                                  checked={formData.permissions.includes(permission)}
+                                  onChange={() => handlePermissionChange(permission)}
+                                />
+                                <label className="custom-control-label" htmlFor={`edit-permission-${permission}`}>
+                                  {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="modal-footer">
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary" 
+                        onClick={() => setShowEditModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm mr-2"></span>
+                            Updating...
+                          </>
+                        ) : (
+                          'Update Customer'
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showEditModal && <div className="modal-backdrop fade show"></div>}
 
         {/* Import Modal */}
         {showImportModal && (

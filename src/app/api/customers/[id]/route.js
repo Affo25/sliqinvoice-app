@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import connectDB from '../../../../lib/mongodb';
 import Customer from '../../../../models/customers';
+import User from '../../../../models/user_models';
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // GET /api/customers/[id] - Fetch single customer by ID
 export async function GET(request, { params }) {
@@ -77,6 +79,7 @@ export async function PUT(request, { params }) {
       company_name,
       contact_email,
       contact_phone,
+      password,
       address,
       package_id,
       subscription_status,
@@ -117,6 +120,14 @@ export async function PUT(request, { params }) {
     if (subscription_status !== undefined) updateData.subscription_status = subscription_status;
     if (permissions !== undefined) updateData.permissions = permissions;
 
+    // Handle password update
+    let hashedPassword = null;
+    if (password && password.trim() !== '') {
+      const saltRounds = 10;
+      hashedPassword = await bcrypt.hash(password, saltRounds);
+      updateData.password = hashedPassword;
+    }
+
     // Update customer
     const updatedCustomer = await Customer.findByIdAndUpdate(
       id,
@@ -129,6 +140,44 @@ export async function PUT(request, { params }) {
         { success: false, message: 'Customer not found' },
         { status: 404 }
       );
+    }
+
+    // Update corresponding user record if it exists
+    try {
+      const userUpdateData = {};
+      
+      // Update email if changed
+      if (contact_email !== undefined && contact_email !== existingCustomer.contact_email) {
+        userUpdateData.email = contact_email;
+      }
+      
+      // Update password if changed
+      if (hashedPassword) {
+        userUpdateData.password_hash = hashedPassword;
+      }
+      
+      // Update permissions if changed
+      if (permissions !== undefined) {
+        userUpdateData.permissions = permissions;
+      }
+      
+      // Update active status based on subscription status
+      if (subscription_status !== undefined) {
+        userUpdateData.is_active = subscription_status === 'active';
+      }
+
+      // Only update if there are changes
+      if (Object.keys(userUpdateData).length > 0) {
+        await User.findOneAndUpdate(
+          { client_id: id }, // Find user by customer ID
+          userUpdateData,
+          { new: true }
+        );
+        console.log('✅ User record updated successfully for customer:', updatedCustomer.contact_email);
+      }
+    } catch (userError) {
+      console.error('⚠️ Failed to update user record for customer:', updatedCustomer.contact_email, userError);
+      // Don't fail the customer update if user update fails
     }
 
     // Format response

@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/theme.css?ver=1.4.0" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
       </head>
-      <body>
+      <body className={`bg-lighter npc-general has-sidebar`}>
         <Providers>
           {children}
         </Providers>

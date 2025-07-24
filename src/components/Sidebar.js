@@ -20,9 +20,9 @@ export default function Sidebar() {
       <div className="nk-sidebar-element nk-sidebar-head">
         <div className="nk-sidebar-brand">
           <Link href="/dashboard" className="logo-link nk-sidebar-logo">
-            <img className="logo-light logo-img" src="/images/logo.png" alt="logo" />
+            <img className="logo-light logo-img" src="/images/logo2x.png" alt="logo" />
             <img className="logo-dark logo-img" src="/images/logo-dark.png" alt="logo-dark" />
-            <span className="nio-version">SliqInvoice</span>
+            {/* <span className="nio-version">SliqInvoice</span> */}
           </Link>
         </div>
         <div className="nk-menu-trigger mr-n2">

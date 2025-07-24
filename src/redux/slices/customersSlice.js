@@ -267,14 +267,15 @@ const customersSlice = createSlice({
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {
         state.loading = false;
-        state.customers = action.payload.customers;
-        state.totalCount = action.payload.pagination.totalCount;
-        state.pagination = action.payload.pagination;
+        state.customers = action.payload.customers || [];
+        state.totalCount = action.payload.pagination?.totalCount || 0;
+        state.pagination = action.payload.pagination || state.pagination;
         state.filters = { ...state.filters, ...action.payload.filters };
       })
       .addCase(fetchCustomers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.customers = []; // Reset customers on error
       })
 
       // Create customer

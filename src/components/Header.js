@@ -1,6 +1,26 @@
-'use client';
+"use client";
+
+import { showToast } from '../lib/toast';
+import { useAuth } from '../lib/useAuth';
 
 export default function Header() {
+  const { user, logout, loading } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      const result = await logout();
+      if (result.success) {
+        showToast("Logged out successfully", 'success');
+      } else {
+        showToast(result.message || "Logout failed", 'error');
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+      showToast("Logout failed: " + err.message, 'error');
+    }
+  };
+
+
   return (
     <div className="nk-header nk-header-fixed is-light">
       <div className="container-fluid">
@@ -68,8 +88,8 @@ export default function Header() {
                       <em className="icon ni ni-user-alt"></em>
                     </div>
                     <div className="user-info d-none d-md-block">
-                      <div className="user-status">Administrator</div>
-                      <div className="user-name dropdown-indicator">John Doe</div>
+                      <div className="user-status">{loading ? "Loading..." : (user?.role ?? "Administrator")}</div>
+                      <div className="user-name dropdown-indicator">{loading ? "Loading..." : (user?.name ?? "john doe")}</div>
                     </div>
                   </div>
                 </a>
@@ -80,8 +100,18 @@ export default function Header() {
                         <span>JD</span>
                       </div>
                       <div className="user-info">
-                        <span className="lead-text">John Doe</span>
-                        <span className="sub-text">john@example.com</span>
+                        <span
+                          className={`lead-text text-white badge ${user?.role === 'superAdmin'
+                              ? 'badge-warning'
+                              : user?.role === 'customers'
+                                ? 'badge-info'
+                                : user?.role === 'moderator'? 'badge badge-danger': 'badge-secondary'
+                            }`}
+                        >
+                          {user?.role ?? 'test'}
+                        </span>
+
+                        <span className="sub-text">{user?.email??""}</span>
                       </div>
                     </div>
                   </div>
@@ -101,7 +131,7 @@ export default function Header() {
                   </div>
                   <div className="dropdown-inner">
                     <ul className="link-list">
-                      <li><a href="/logout"><em className="icon ni ni-signout"></em><span>Sign out</span></a></li>
+                      <li><a onClick={handleLogout}><em className="icon ni ni-signout"></em><span>Sign out</span></a></li>
                     </ul>
                   </div>
                 </div>

@@ -264,44 +264,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Login Options Quick Access */}
-      <div className="nk-block">
-        <div className="row g-gs">
-          <div className="col-md-6">
-            <div className="card card-bordered">
-              <div className="card-inner text-center">
-                <div className="card-title-group">
-                  <div className="card-title">
-                    <h6 className="title">Admin Login</h6>
-                  </div>
-                </div>
-                <p className="text-soft">Access the admin panel to manage users, system settings, and analytics.</p>
-                <a href="/auth/admin-login" className="btn btn-primary">
-                  <em className="icon ni ni-signin"></em>
-                  <span>Admin Login</span>
-                </a>
-              </div>
-            </div>
-          </div>
-          
-          <div className="col-md-6">
-            <div className="card card-bordered">
-              <div className="card-inner text-center">
-                <div className="card-title-group">
-                  <div className="card-title">
-                    <h6 className="title">Customer Login</h6>
-                  </div>
-                </div>
-                <p className="text-soft">Access your customer account to manage invoices and payments.</p>
-                <a href="/auth/customer-login" className="btn btn-outline-primary">
-                  <em className="icon ni ni-user"></em>
-                  <span>Customer Login</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
