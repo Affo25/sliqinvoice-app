@@ -540,7 +540,7 @@ export default function ModulesPage() {
                                 <div className="dropdown">
                                   <a href="#" className="btn btn-trigger btn-icon dropdown-toggle" data-bs-toggle="dropdown">
                                     <div className="dot dot-primary"></div>
-                                    <em className="icon ni ni-filter-alt"></em>
+                                    <em className="icon ni ni-file"></em>
                                   </a>
                                   <div className="filter-wg dropdown-menu dropdown-menu-xl dropdown-menu-right">
                                     <div className="dropdown-head">
@@ -702,9 +702,10 @@ export default function ModulesPage() {
               <div className="card-inner p-0">
                 <div className="nk-tb-list nk-tb-ulist">
                   <div className="nk-tb-item nk-tb-head">
-                    <div className="nk-tb-col nk-tb-col-check">
+                    <div style={{paddingBottom:"1.2rem"}} className="nk-tb-col nk-tb-col-check">
                       <div className="custom-control custom-control-sm custom-checkbox notext">
                         <input 
+                       
                           type="checkbox" 
                           className="custom-control-input" 
                           id="uid"
