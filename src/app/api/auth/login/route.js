@@ -20,11 +20,11 @@ export async function POST(req) {
       );
     }
 
-    const user = await User.findOne({ email, role });
+    const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
-        { message: "User not found", success: false },
-        { status: 404 }
+        { message: "User not found", success: false, role: user.role },
+        { status: 404 },
       );
     }
 

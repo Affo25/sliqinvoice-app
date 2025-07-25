@@ -7,8 +7,8 @@ export const TableActionMenu = ({ children, className = '' }) => {
     <div className="nk-tb-col nk-tb-col-tools">
       <ul className="nk-tb-actions gx-1">
         <li>
-          <div className="drodown">
-            <a href="#" className={`dropdown-toggle btn btn-icon btn-trigger ${className}`} data-toggle="dropdown">
+          <div className="dropdown">
+            <a href="#" className={`dropdown-toggle btn btn-icon btn-trigger ${className}`} data-bs-toggle="dropdown">
               <em className="icon ni ni-more-h"></em>
             </a>
             <div className="dropdown-menu dropdown-menu-right">

@@ -8,9 +8,7 @@ export function middleware(request) {
 
   // Define public routes that don't require authentication
   const publicRoutes = [
-    '/auth/admin-login',
-    '/auth/customer-login', 
-    '/auth/customer-register',
+    '/login',
     '/api/auth/login',
     '/auth/forgot-password',
     '/',
@@ -58,7 +56,7 @@ export function middleware(request) {
 
   // If trying to access a protected route without a token
   if (!isPublicRoute && !token) {
-    const loginUrl = new URL('/auth/admin-login', request.url);
+    const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
 

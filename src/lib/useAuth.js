@@ -34,7 +34,7 @@ export function useAuth() {
         
         // If unauthorized, redirect to login
         if (res.status === 401) {
-          router.push('/auth/admin-login');
+          router.push('/login');
         }
       }
     } catch (err) {
@@ -101,7 +101,7 @@ export function useAuth() {
         }
         
         // Force page reload and redirect
-        window.location.href = '/auth/admin-login';
+        window.location.href = '/login';
         
         return { success: true };
       } else {

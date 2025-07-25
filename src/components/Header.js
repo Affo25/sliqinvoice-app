@@ -122,13 +122,13 @@ export default function Header() {
                       <li><a href="/activity"><em className="icon ni ni-activity-alt"></em><span>Login Activity</span></a></li>
                     </ul>
                   </div>
-                  <div className="dropdown-inner">
+                  {/* <div className="dropdown-inner">
                     <ul className="link-list">
-                      <li><a href="/auth/admin-login"><em className="icon ni ni-shield-check"></em><span>Admin Login</span></a></li>
+                      <li><a href="/auth/login"><em className="icon ni ni-shield-check"></em><span>Admin Login</span></a></li>
                       <li><a href="/auth/customer-login"><em className="icon ni ni-user"></em><span>Customer Login</span></a></li>
                       <li><a href="/auth/customer-register"><em className="icon ni ni-user-add"></em><span>Register</span></a></li>
                     </ul>
-                  </div>
+                  </div> */}
                   <div className="dropdown-inner">
                     <ul className="link-list">
                       <li><a onClick={handleLogout}><em className="icon ni ni-signout"></em><span>Sign out</span></a></li>

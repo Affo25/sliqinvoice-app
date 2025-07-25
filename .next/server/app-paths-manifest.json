@@ -1,11 +1,8 @@
 {
-  "/api/auth/logout/route": "app/api/auth/logout/route.js",
-  "/api/users/route": "app/api/users/route.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
   "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/auth/admin-login/page": "app/auth/admin-login/page.js",
+  "/api/modules/route": "app/api/modules/route.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
   "/dashboard/users/page": "app/dashboard/users/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/auth/customer-login/page": "app/auth/customer-login/page.js",
-  "/dashboard/customer/page": "app/dashboard/customer/page.js"
+  "/dashboard/modules/page": "app/dashboard/modules/page.js"
 }

@@ -11,15 +11,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/auth/layout": [
+    "/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/auth/layout.js"
-    ],
-    "/auth/admin-login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/auth/admin-login/page.js"
+      "static/chunks/app/login/page.js"
     ],
     "/api/auth/login/route": [
       "static/chunks/webpack.js",
@@ -36,47 +31,37 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/api/auth/logout/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/auth/logout/route.js"
-    ],
-    "/api/auth/me/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/auth/me/route.js"
-    ],
     "/dashboard/users/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/dashboard/users/page.css",
       "static/chunks/app/dashboard/users/page.js"
     ],
+    "/api/auth/me/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/auth/me/route.js"
+    ],
     "/api/users/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/users/route.js"
     ],
-    "/auth/customer-login/page": [
+    "/dashboard/modules/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/auth/customer-login/page.js"
+      "static/css/app/dashboard/modules/page.css",
+      "static/chunks/app/dashboard/modules/page.js"
     ],
-    "/dashboard/customer/page": [
+    "/api/modules/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/dashboard/customer/page.css",
-      "static/chunks/app/dashboard/customer/page.js"
+      "static/chunks/app/api/modules/route.js"
     ],
-    "/api/customers/route": [
+    "/api/modules/export/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/customers/route.js"
-    ],
-    "/api/users/[id]/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/users/[id]/route.js"
+      "static/chunks/app/api/modules/export/route.js"
     ]
   }
 }

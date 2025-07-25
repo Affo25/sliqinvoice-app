@@ -5,6 +5,7 @@ import Image from 'next/image';
 export default function SplashScreen({ onLoadingComplete }) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const loadingSteps = [
     'Initializing System Components...',
@@ -22,6 +23,7 @@ export default function SplashScreen({ onLoadingComplete }) {
         
         if (newProgress >= 100) {
           clearInterval(interval);
+          setIsCompleting(true);
           // Wait a bit more before completing
           setTimeout(() => {
             onLoadingComplete();
@@ -160,6 +162,13 @@ export default function SplashScreen({ onLoadingComplete }) {
           z-index: 9999;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           overflow: hidden;
+          opacity: 1;
+          transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .splash-screen.fade-out {
+          opacity: 0;
+          transform: scale(1.05);
         }
 
         .background-animation {

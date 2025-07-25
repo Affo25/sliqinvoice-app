@@ -4,53 +4,58 @@ import { useRouter } from 'next/navigation';
 import SplashScreen from '../components/SplashScreen';
 import Cookies from 'js-cookie';
 
-
 export default function HomePage() {
   const [showSplash, setShowSplash] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [user, setUser] = useState(null);
   const router = useRouter();
 
- const handleLoadingComplete = () => {
-  setShowSplash(false);
-  setIsRedirecting(true);
+  const handleLoadingComplete = () => {
+    setShowSplash(false);
+    setIsRedirecting(true);
 
-  const token = Cookies.get('token');
-  const userData = Cookies.get('user');
+    const token = Cookies.get('token');
+    const userData = Cookies.get('user');
 
-  console.log("Token:", token);
-  console.log("UserData:", userData);
+    console.log("Token:", token);
+    console.log("UserData:", userData);
 
-  if (!token) {
-    router.push('/auth/admin-login');
-    return;
-  }
-
-  if (userData) {
-    try {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-
-      // Role-based redirection
-      if (parsedUser.role === 'superAdmin' || parsedUser.role === 'moderator') {
-        router.push('/dashboard');
-      } else if (parsedUser.role === 'customers') {
-        router.push('/dashboard/customers');
-      } else {
-        router.push('/Pages/unauthorized');
-      }
-
-      return;
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      router.push('/auth/admin-login');
+    if (!token) {
+      router.push('/login');
       return;
     }
-  } else {
-    // If userData is missing but token exists, treat as invalid
-    router.push('/auth/admin-login');
-    return;
-  }
-};
+
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+
+        // Role-based redirection
+        if (parsedUser.role === 'superAdmin') {
+          router.push('/dashboard/users');
+        } else if (parsedUser.role === 'customers') {
+          router.push('/dashboard/customers');
+        } else if (parsedUser.role === 'moderator') {
+          router.push('/dashboard/customers');
+        } else if (parsedUser.role === 'customerUsers') {
+          router.push('/dashboard/customerUsers');
+        } else {
+          // Unknown role, redirect to unauthorized page
+          router.push('/Pages/unauthorized');
+        }
+
+        return;
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        router.push('/login');
+        return;
+      }
+    } else {
+      // If userData is missing but token exists, treat as invalid
+      router.push('/login');
+      return;
+    }
+  };
 
   // Show a simple loading state if redirect is taking time
   if (isRedirecting && !showSplash) {
