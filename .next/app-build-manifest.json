@@ -47,6 +47,27 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/users/route.js"
     ],
+    "/dashboard/customer/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/dashboard/customer/page.css",
+      "static/chunks/app/dashboard/customer/page.js"
+    ],
+    "/api/customers/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/customers/route.js"
+    ],
+    "/api/users/bulk-delete/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/users/bulk-delete/route.js"
+    ],
+    "/api/users/import/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/users/import/route.js"
+    ],
     "/dashboard/modules/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -58,10 +79,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/modules/route.js"
     ],
-    "/api/modules/export/route": [
+    "/api/users/[id]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/modules/export/route.js"
+      "static/chunks/app/api/users/[id]/route.js"
     ]
   }
 }

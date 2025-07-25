@@ -16,8 +16,9 @@ import {
 import { showToast } from '../../../lib/toast';
 import { useSweetAlert } from '../../../components/SweetAlerts';
 import { UserActionMenu, BulkUserActions, UserFormActions } from '../../../components/UserActions';
+import { initializeDropdowns, cleanupDropdowns } from '../../../lib/dropdownUtils';
 import '../../../app/globals.css';
-import {Pages} from "../../data/routes";
+import { Pages } from "../../data/routes";
 
 export default function UsersPage() {
   // Redux state
@@ -38,6 +39,13 @@ export default function UsersPage() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+
+  // Local filter state (for temporary selections before Apply)
+  const [localFilters, setLocalFilters] = useState({
+    statuses: filters.statuses || [],
+    roles: filters.roles || [],
+    limit: filters.limit || 10
+  });
 
   // SweetAlert hooks
   const { confirmUserDelete, confirmBulkUserDelete, handleDeleteSuccess, handleDeleteError, handleBulkDeleteSuccess, handleBulkDeleteError } = useSweetAlert();
@@ -75,6 +83,23 @@ export default function UsersPage() {
       dispatch(clearError());
     };
   }, [dispatch]);
+
+  // Initialize dropdown functionality
+  useEffect(() => {
+    initializeDropdowns();
+    return () => {
+      cleanupDropdowns();
+    };
+  }, []);
+
+  // Sync local filters with Redux filters (for external changes like reset)
+  useEffect(() => {
+    setLocalFilters({
+      statuses: filters.statuses || [],
+      roles: filters.roles || [],
+      limit: filters.limit || 10
+    });
+  }, [filters.statuses, filters.roles, filters.limit]);
 
   // Sorting
   const handleSort = (key) => {
@@ -220,29 +245,67 @@ export default function UsersPage() {
     dispatch(setFilters({ search: value, page: 1 }));
   };
 
-  // Handle status filter change
+  // Handle status filter change (local state only)
   const handleStatusFilterChange = (status) => {
-    const currentStatuses = filters.statuses || [];
+    const currentStatuses = localFilters.statuses || [];
     const newStatuses = currentStatuses.includes(status)
       ? currentStatuses.filter(s => s !== status)
       : [...currentStatuses, status];
 
-    dispatch(setFilters({ statuses: newStatuses, page: 1 }));
+    setLocalFilters(prev => ({
+      ...prev,
+      statuses: newStatuses
+    }));
   };
 
-  // Handle role filter change
+  // Handle role filter change (local state only)
   const handleRoleFilterChange = (role) => {
-    const currentRoles = filters.roles || [];
+    const currentRoles = localFilters.roles || [];
     const newRoles = currentRoles.includes(role)
       ? currentRoles.filter(r => r !== role)
       : [...currentRoles, role];
 
-    dispatch(setFilters({ roles: newRoles, page: 1 }));
+    setLocalFilters(prev => ({
+      ...prev,
+      roles: newRoles
+    }));
   };
 
-  // Handle items per page change
+  // Handle items per page change (local state only)
   const handleItemsPerPageChange = (limit) => {
-    dispatch(setFilters({ limit: Number(limit), page: 1 }));
+    setLocalFilters(prev => ({
+      ...prev,
+      limit: Number(limit)
+    }));
+  };
+
+  // Apply filters and trigger API call
+  const handleApplyFilters = () => {
+    // Dispatch filters to Redux (this triggers the API call via useEffect)
+    dispatch(setFilters({
+      ...localFilters,
+      page: 1
+    }));
+
+    // Close the dropdown after a short delay to allow for visual feedback
+    setTimeout(() => {
+      const dropdown = document.getElementById('filterDropdown');
+      if (dropdown) {
+        dropdown.click();
+      }
+    }, 100);
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    const resetFilters = {
+      statuses: [],
+      roles: [],
+      limit: 10
+    };
+
+    setLocalFilters(resetFilters);
+    dispatch(clearFilters());
   };
 
   // Handle page change
@@ -423,16 +486,6 @@ export default function UsersPage() {
                 <div className="toggle-expand-content" data-content="pageMenu">
                   <ul className="nk-block-tools g-5">
                     <li className="nk-block-tools-opt">
-                      {selectedUsers.length > 0 && (
-                        <button
-                          className="btn btn-outline-danger mr-2"
-                          onClick={() => handleBulkDelete(selectedUsers)}
-                          disabled={loading}
-                        >
-                          <em className="icon ni ni-trash"></em>
-                          <span>Delete Selected ({selectedUsers.length})</span>
-                        </button>
-                      )}
                       <button
                         className="btn btn-danger"
                         onClick={handleExport}
@@ -500,289 +553,123 @@ export default function UsersPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="card-tools mr-n1">
-                    <ul className="btn-toolbar gx-1">
-                      <li>
-                        <a href="#" className="btn btn-icon search-toggle toggle-search" data-target="search">
-                          <em className="icon ni ni-search"></em>
-                        </a>
-                      </li>
-                      <li className="btn-toolbar-sep"></li>
-                      <li>
-                        <div className="toggle-wrap">
-                          <a href="#" className="btn btn-icon btn-trigger toggle" data-target="cardTools">
-                            <em className="icon ni ni-menu-right"></em>
-                          </a>
-                          <div className="toggle-content" data-content="cardTools">
-                            <ul className="btn-toolbar gx-1">
-                              <li className="toggle-close">
-                                <a href="#" className="btn btn-icon btn-trigger toggle" data-target="cardTools">
-                                  <em className="icon ni ni-arrow-left"></em>
-                                </a>
-                              </li>
-                              <li>
-                                <div className="dropdown">
-                                  <a href="#" className="btn btn-trigger btn-icon dropdown-toggle" data-toggle="dropdown">
-                                    <div className="dot dot-primary"></div>
-                                    <em className="icon ni ni-filter-alt"></em>
-                                  </a>
-                                  <div className="filter-wg dropdown-menu dropdown-menu-xl dropdown-menu-right">
-                                    <div className="dropdown-head">
-                                      <span className="sub-title dropdown-title">Filter Users</span>
-                                      <div className="dropdown-text">
-                                        {filters.roles?.length > 0 && (
-                                          <span className="badge badge-primary">{filters.roles.length} role(s) selected</span>
-                                        )}
-                                        {filters.statuses?.length > 0 && (
-                                          <span className="badge badge-success ml-1">{filters.statuses.length} status(es) selected</span>
-                                        )}
-                                        {filters.limit && filters.limit !== 10 && (
-                                          <span className="badge badge-info ml-1">{filters.limit} per page</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="dropdown-body dropdown-body-rg" onClick={(e) => e.stopPropagation()}>
-                                      <div className="row gx-6 gy-4">
-                                        <div className="col-6">
-                                          <div className="form-group">
-                                            <label className="overline-title overline-title-alt">Status</label>
-                                            <div className="custom-control-group">
-                                              <div className="custom-control custom-checkbox">
-                                                <input
-                                                  type="checkbox"
-                                                  className="custom-control-input"
-                                                  id="filter-status-active"
-                                                  checked={filters.statuses?.includes('active')}
-                                                  onChange={() => handleStatusFilterChange('active')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-status-active">
-                                                  <span className="badge badge-success">Active</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-checkbox">
-                                                <input
-                                                  type="checkbox"
-                                                  className="custom-control-input"
-                                                  id="filter-status-inactive"
-                                                  checked={filters.statuses?.includes('inactive')}
-                                                  onChange={() => handleStatusFilterChange('inactive')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-status-inactive">
-                                                  <span className="badge badge-danger">Inactive</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-checkbox">
-                                                <input
-                                                  type="checkbox"
-                                                  className="custom-control-input"
-                                                  id="filter-status-pending"
-                                                  checked={filters.statuses?.includes('pending')}
-                                                  onChange={() => handleStatusFilterChange('pending')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-status-pending">
-                                                  <span className="badge badge-warning">Pending</span>
-                                                </label>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="col-6">
-                                          <div className="form-group">
-                                            <label className="overline-title overline-title-alt">Items Per Page</label>
-                                            <div className="custom-control-group">
-                                              <div className="custom-control custom-radio">
-                                                <input
-                                                  type="radio"
-                                                  className="custom-control-input"
-                                                  id="filter-limit-2"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 2}
-                                                  onChange={() => handleItemsPerPageChange(2)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-2">
-                                                  <span className="badge badge-outline-primary">2 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input
-                                                  type="radio"
-                                                  className="custom-control-input"
-                                                  id="filter-limit-10"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 10}
-                                                  onChange={() => handleItemsPerPageChange(10)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-10">
-                                                  <span className="badge badge-outline-primary">10 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input
-                                                  type="radio"
-                                                  className="custom-control-input"
-                                                  id="filter-limit-20"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 20}
-                                                  onChange={() => handleItemsPerPageChange(20)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-20">
-                                                  <span className="badge badge-outline-primary">20 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input
-                                                  type="radio"
-                                                  className="custom-control-input"
-                                                  id="filter-limit-30"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 30}
-                                                  onChange={() => handleItemsPerPageChange(30)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-30">
-                                                  <span className="badge badge-outline-primary">30 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input
-                                                  type="radio"
-                                                  className="custom-control-input"
-                                                  id="filter-limit-40"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 40}
-                                                  onChange={() => handleItemsPerPageChange(40)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-40">
-                                                  <span className="badge badge-outline-primary">40 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input
-                                                  type="radio"
-                                                  className="custom-control-input"
-                                                  id="filter-limit-50"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 50}
-                                                  onChange={() => handleItemsPerPageChange(50)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-50">
-                                                  <span className="badge badge-outline-primary">50 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input
-                                                  type="radio"
-                                                  className="custom-control-input"
-                                                  id="filter-limit-100"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 100}
-                                                  onChange={() => handleItemsPerPageChange(100)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-100">
-                                                  <span className="badge badge-outline-primary">100 per page</span>
-                                                </label>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="col-12">
-                                          <div className="form-group">
-                                            <label className="overline-title overline-title-alt">User Roles</label>
-                                            <div className="custom-control-group">
-                                              <div className="custom-control custom-checkbox">
-                                                <input
-                                                  type="checkbox"
-                                                  className="custom-control-input"
-                                                  id="filter-role-superAdmin"
-                                                  checked={filters.roles?.includes('superAdmin')}
-                                                  onChange={() => handleRoleFilterChange('superAdmin')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-role-superAdmin">
-                                                  <span className="badge badge-primary">Super Admin</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-checkbox">
-                                                <input
-                                                  type="checkbox"
-                                                  className="custom-control-input"
-                                                  id="filter-role-moderator"
-                                                  checked={filters.roles?.includes('moderator')}
-                                                  onChange={() => handleRoleFilterChange('moderator')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-role-moderator">
-                                                  <span className="badge badge-info">Moderator</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-checkbox">
-                                                <input
-                                                  type="checkbox"
-                                                  className="custom-control-input"
-                                                  id="filter-role-customers"
-                                                  checked={filters.roles?.includes('customers')}
-                                                  onChange={() => handleRoleFilterChange('customers')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-role-customers">
-                                                  <span className="badge badge-secondary">Customer</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-checkbox">
-                                                <input
-                                                  type="checkbox"
-                                                  className="custom-control-input"
-                                                  id="filter-role-customerUsers"
-                                                  checked={filters.roles?.includes('customerUsers')}
-                                                  onChange={() => handleRoleFilterChange('customerUsers')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-role-customerUsers">
-                                                  <span className="badge badge-warning">Customer User</span>
-                                                </label>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="dropdown-foot between" onClick={(e) => e.stopPropagation()}>
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-outline-light"
-                                        onClick={() => dispatch(clearFilters())}
-                                      >
-                                        Reset Filters
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-primary"
-                                        onClick={() => {
-                                          // Close the dropdown after applying filters
-                                          document.querySelector('[data-target="cardTools"]').click();
-                                        }}
-                                      >
-                                        Apply Filters
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </li>
-                            </ul>
-                          </div>
+                  <div className="card-tools ms-auto">
+                    <div className="dropdown">
+                      <button
+                        className="btn btn-outline-primary btn-sm dropdown-toggle position-relative"
+                        type="button"
+                        id="filterDropdown"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        <em className="icon ni ni-filter-alt me-1"></em>
+                        Filters
+                        {(filters.statuses?.length > 0 || filters.roles?.length > 0 || (filters.limit && filters.limit !== 10)) && (
+                          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {(filters.statuses?.length || 0) + (filters.roles?.length || 0) + (filters.limit && filters.limit !== 10 ? 1 : 0)}
+                            <span className="visually-hidden">active filters</span>
+                          </span>
+                        )}
+                      </button>
+
+                      <div className="dropdown-menu dropdown-menu-end p-3 shadow-lg" style={{ minWidth: '320px' }}>
+                        <h6 className="dropdown-header d-flex justify-content-between align-items-center">
+                          Filter Users
+                          <small className="text-muted">
+                            {localFilters.statuses?.length + localFilters.roles?.length + (localFilters.limit !== 10 ? 1 : 0)} selected
+                          </small>
+                        </h6>
+
+                        {/* Status Filter */}
+                        <div className="form-group mb-2">
+                          <label className="form-label">Status</label>
+                          {['active', 'inactive', 'pending'].map((status) => (
+                            <div className="form-check" key={status}>
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id={`filter-status-${status}`}
+                                checked={localFilters.statuses?.includes(status)}
+                                onChange={() => handleStatusFilterChange(status)}
+                              />
+                              <label className="form-check-label" htmlFor={`filter-status-${status}`}>
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </label>
+                            </div>
+                          ))}
                         </div>
-                      </li>
-                    </ul>
+
+                        {/* Roles Filter */}
+                        <div className="form-group mb-2">
+                          <label className="form-label">Roles</label>
+                          {['superAdmin', 'moderator', 'customers', 'customerUsers'].map((role) => (
+                            <div className="form-check" key={role}>
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id={`filter-role-${role}`}
+                                checked={localFilters.roles?.includes(role)}
+                                onChange={() => handleRoleFilterChange(role)}
+                              />
+                              <label className="form-check-label" htmlFor={`filter-role-${role}`}>
+                                {role === 'superAdmin'
+                                  ? 'Super Admin'
+                                  : role === 'customerUsers'
+                                    ? 'Customer User'
+                                    : role.charAt(0).toUpperCase() + role.slice(1)}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Items Per Page */}
+                        <div className="form-group mb-3">
+                          <label className="form-label">Items per page</label>
+                          {[2, 5, 10, 20, 30, 50, 100].map((limit) => (
+                            <div className="form-check" key={limit}>
+                              <input
+                                className="form-check-input"
+                                type="radio"
+                                name="itemsPerPage"
+                                id={`limit-${limit}`}
+                                checked={localFilters.limit === limit}
+                                onChange={() => handleItemsPerPageChange(limit)}
+                              />
+                              <label className="form-check-label" htmlFor={`limit-${limit}`}>
+                                {limit} items
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="d-flex justify-content-between pt-2 border-top">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={handleResetFilters}
+                          >
+                            Reset
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={handleApplyFilters}
+                            disabled={loading}
+                          >
+                            {loading ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                Loading...
+                              </>
+                            ) : (
+                              'Apply'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
               </div>
 
@@ -908,10 +795,10 @@ export default function UsersPage() {
                       </div>
                       <div className="nk-tb-col tb-col-lg">
                         <span className="tb-amount">
-                          {user.permissions && user.permissions.length > 0 
-                            ? user.permissions.map(permission => 
-                                permission.charAt(0).toUpperCase() + permission.slice(1).replace('_', ' ')
-                              ).join(', ')
+                          {user.permissions && user.permissions.length > 0
+                            ? user.permissions.map(permission =>
+                              permission.charAt(0).toUpperCase() + permission.slice(1).replace('_', ' ')
+                            ).join(', ')
                             : 'No permissions'
                           }
                         </span>
@@ -928,6 +815,9 @@ export default function UsersPage() {
                   ))}
                 </div>
               </div>
+
+              
+                   {/* pagination here */}
 
               <div className="card-inner">
                 <div className="nk-block-between-md g-3">
@@ -1156,29 +1046,29 @@ export default function UsersPage() {
                     <div className="col-12">
                       <h6 className="overline-title text-primary-alt">Permissions</h6>
                     </div>
-                  <div className="col-12">
-  <div className="form-group">
-    <div className="custom-control-group">
-      {Array.isArray(Pages) && Pages.map((permission) => (
-        <div key={permission.path} className="custom-control custom-checkbox">
-          <input
-            type="checkbox"
-            className="custom-control-input"
-            id={`permission-${permission.path}`}
-            checked={formData.permissions.includes(permission.path)}
-            onChange={() => handlePermissionChange(permission.path)}
-          />
-          <label
-            className="custom-control-label"
-            htmlFor={`permission-${permission.path}`}
-          >
-            {permission.label}
-          </label>
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
+                    <div className="col-12">
+                      <div className="form-group">
+                        <div className="custom-control-group">
+                          {Array.isArray(Pages) && Pages.map((permission) => (
+                            <div key={permission.path} className="custom-control custom-checkbox">
+                              <input
+                                type="checkbox"
+                                className="custom-control-input"
+                                id={`permission-${permission.path}`}
+                                checked={formData.permissions.includes(permission.path)}
+                                onChange={() => handlePermissionChange(permission.path)}
+                              />
+                              <label
+                                className="custom-control-label"
+                                htmlFor={`permission-${permission.path}`}
+                              >
+                                {permission.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
 
 

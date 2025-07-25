@@ -19,6 +19,7 @@ import {
 import { showToast } from '../../../lib/toast';
 import { useSweetAlert } from '../../../components/SweetAlerts';
 import { CustomerActionMenu, BulkCustomerActions } from '../../../components/CustomerActions';
+import { initializeDropdowns, cleanupDropdowns } from '../../../lib/dropdownUtils';
 import '../../../app/globals.css';
 
 export default function CustomersPage() {
@@ -41,6 +42,12 @@ export default function CustomersPage() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  
+  // Local filter state (for temporary selections before Apply)
+  const [localFilters, setLocalFilters] = useState({
+    statuses: filters.statuses || [],
+    limit: filters.limit || 10
+  });
 
   // SweetAlert hooks
   const { confirmUserDelete, confirmBulkUserDelete, handleDeleteSuccess, handleDeleteError, handleBulkDeleteSuccess, handleBulkDeleteError } = useSweetAlert();
@@ -132,6 +139,22 @@ export default function CustomersPage() {
       dispatch(clearError());
     };
   }, [dispatch]);
+
+  // Initialize dropdown functionality
+  useEffect(() => {
+    initializeDropdowns();
+    return () => {
+      cleanupDropdowns();
+    };
+  }, []);
+
+  // Sync local filters with Redux filters (for external changes like reset)
+  useEffect(() => {
+    setLocalFilters({
+      statuses: filters.statuses || [],
+      limit: filters.limit || 10
+    });
+  }, [filters.statuses, filters.limit]);
 
   // Sorting
   const handleSort = (key) => {
@@ -283,19 +306,51 @@ export default function CustomersPage() {
     dispatch(setFilters({ search: value, page: 1 }));
   };
 
-  // Handle status filter change
+  // Handle status filter change (local state only)
   const handleStatusFilterChange = (status) => {
-    const currentStatuses = filters.statuses || [];
+    const currentStatuses = localFilters.statuses || [];
     const newStatuses = currentStatuses.includes(status) 
       ? currentStatuses.filter(s => s !== status)
       : [...currentStatuses, status];
     
-    dispatch(setFilters({ statuses: newStatuses, page: 1 }));
+    setLocalFilters(prev => ({
+      ...prev,
+      statuses: newStatuses
+    }));
   };
 
-  // Handle items per page change
+  // Handle items per page change (local state only)
   const handleItemsPerPageChange = (limit) => {
-    dispatch(setFilters({ limit: Number(limit), page: 1 }));
+    setLocalFilters(prev => ({
+      ...prev,
+      limit: Number(limit)
+    }));
+  };
+
+  // Apply filters and trigger API call
+  const handleApplyFilters = () => {
+    dispatch(setFilters({ 
+      ...localFilters, 
+      page: 1 
+    }));
+    
+    setTimeout(() => {
+      const dropdown = document.getElementById('customerFilterDropdown');
+      if (dropdown) {
+        dropdown.click();
+      }
+    }, 100);
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    const resetFilters = {
+      statuses: [],
+      limit: 10
+    };
+    
+    setLocalFilters(resetFilters);
+    dispatch(clearFilters());
   };
 
   // Handle page change
@@ -526,16 +581,7 @@ export default function CustomersPage() {
                 <div className="toggle-expand-content" data-content="pageMenu">
                   <ul className="nk-block-tools g-5">
                     <li className="nk-block-tools-opt">
-                      {selectedCustomers.length > 0 && (
-                        <button 
-                          className="btn btn-outline-danger mr-2"
-                          onClick={() => handleBulkDelete(selectedCustomers)}
-                          disabled={loading}
-                        >
-                          <em className="icon ni ni-trash"></em>
-                          <span>Delete Selected ({selectedCustomers.length})</span>
-                        </button>
-                      )}
+                    
                        <button 
                         className="btn btn-danger"
                         onClick={handleExport}
@@ -589,184 +635,98 @@ export default function CustomersPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="card-tools mr-n1">
-                    <ul className="btn-toolbar gx-1">
-                      <li>
-                        <a href="#" className="btn btn-icon search-toggle toggle-search" data-target="search">
-                          <em className="icon ni ni-search"></em>
-                        </a>
-                      </li>
-                      <li className="btn-toolbar-sep"></li>
-                      <li>
-                        <div className="toggle-wrap">
-                          <a href="#" className="btn btn-icon btn-trigger toggle" data-target="cardTools">
-                            <em className="icon ni ni-menu-right"></em>
-                          </a>
-                          <div className="toggle-content" data-content="cardTools">
-                            <ul className="btn-toolbar gx-1">
-                              <li className="toggle-close">
-                                <a href="#" className="btn btn-icon btn-trigger toggle" data-target="cardTools">
-                                  <em className="icon ni ni-arrow-left"></em>
-                                </a>
-                              </li>
-                              <li>
-                                <div className="dropdown">
-                                  <a href="#" className="btn btn-trigger btn-icon dropdown-toggle" data-toggle="dropdown">
-                                    <div className="dot dot-primary"></div>
-                                    <em className="icon ni ni-filter-alt"></em>
-                                  </a>
-                                  <div className="filter-wg dropdown-menu dropdown-menu-xl dropdown-menu-right">
-                                    <div className="dropdown-head">
-                                      <span className="sub-title dropdown-title">Filter Customers</span>
-                                      <div className="dropdown-text">
-                                        {filters.statuses?.length > 0 && (
-                                          <span className="badge badge-success ml-1">{filters.statuses.length} status(es) selected</span>
-                                        )}
-                                        {filters.limit && filters.limit !== 10 && (
-                                          <span className="badge badge-info ml-1">{filters.limit} per page</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="dropdown-body dropdown-body-rg" onClick={(e) => e.stopPropagation()}>
-                                      <div className="row gx-6 gy-4">
-                                        <div className="col-6">
-                                          <div className="form-group">
-                                            <label className="overline-title overline-title-alt">Status</label>
-                                            <div className="custom-control-group">
-                                              <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
-                                                  id="filter-status-active"
-                                                  checked={filters.statuses?.includes('active')}
-                                                  onChange={() => handleStatusFilterChange('active')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-status-active">
-                                                  <span className="badge badge-success">Active</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
-                                                  id="filter-status-suspended"
-                                                  checked={filters.statuses?.includes('suspended')}
-                                                  onChange={() => handleStatusFilterChange('suspended')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-status-suspended">
-                                                  <span className="badge badge-warning">Suspended</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-checkbox">
-                                                <input 
-                                                  type="checkbox" 
-                                                  className="custom-control-input" 
-                                                  id="filter-status-cancelled"
-                                                  checked={filters.statuses?.includes('cancelled')}
-                                                  onChange={() => handleStatusFilterChange('cancelled')}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-status-cancelled">
-                                                  <span className="badge badge-danger">Cancelled</span>
-                                                </label>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="col-6">
-                                          <div className="form-group">
-                                            <label className="overline-title overline-title-alt">Items Per Page</label>
-                                            <div className="custom-control-group">
-                                              <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
-                                                  id="filter-limit-2"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 2}
-                                                  onChange={() => handleItemsPerPageChange(2)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-2">
-                                                  <span className="badge badge-outline-primary">2 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
-                                                  id="filter-limit-10"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 10}
-                                                  onChange={() => handleItemsPerPageChange(10)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-10">
-                                                  <span className="badge badge-outline-primary">10 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
-                                                  id="filter-limit-20"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 20}
-                                                  onChange={() => handleItemsPerPageChange(20)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-20">
-                                                  <span className="badge badge-outline-primary">20 per page</span>
-                                                </label>
-                                              </div>
-                                              <div className="custom-control custom-radio">
-                                                <input 
-                                                  type="radio" 
-                                                  className="custom-control-input" 
-                                                  id="filter-limit-100"
-                                                  name="itemsPerPage"
-                                                  checked={filters.limit === 100}
-                                                  onChange={() => handleItemsPerPageChange(100)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <label className="custom-control-label" htmlFor="filter-limit-100">
-                                                  <span className="badge badge-outline-primary">100 per page</span>
-                                                </label>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="dropdown-foot between" onClick={(e) => e.stopPropagation()}>
-                                      <button 
-                                        type="button" 
-                                        className="btn btn-sm btn-outline-light"
-                                        onClick={() => dispatch(clearFilters())}
-                                      >
-                                        Reset Filters
-                                      </button>
-                                      <button 
-                                        type="button" 
-                                        className="btn btn-sm btn-primary"
-                                        onClick={() => {
-                                          // Close the dropdown after applying filters
-                                          document.querySelector('[data-target="cardTools"]').click();
-                                        }}
-                                      >
-                                        Apply Filters
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </li>
-                            </ul>
-                          </div>
+                  <div className="card-tools ms-auto">
+                    <div className="dropdown">
+                      <button
+                        className="btn btn-outline-primary btn-sm dropdown-toggle position-relative"
+                        type="button"
+                        id="customerFilterDropdown"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        <em className="icon ni ni-filter-alt me-1"></em>
+                        Filters
+                        {(filters.statuses?.length > 0 || (filters.limit && filters.limit !== 10)) && (
+                          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {(filters.statuses?.length || 0) + (filters.limit && filters.limit !== 10 ? 1 : 0)}
+                            <span className="visually-hidden">active filters</span>
+                          </span>
+                        )}
+                      </button>
+
+                      <div className="dropdown-menu dropdown-menu-end p-3 shadow-lg" style={{ minWidth: '320px' }}>
+                        <h6 className="dropdown-header d-flex justify-content-between align-items-center">
+                          Filter Customers
+                          <small className="text-muted">
+                            {localFilters.statuses?.length + (localFilters.limit !== 10 ? 1 : 0)} selected
+                          </small>
+                        </h6>
+
+                        {/* Status Filter */}
+                        <div className="form-group mb-2">
+                          <label className="form-label">Status</label>
+                          {['active', 'suspended', 'cancelled'].map((status) => (
+                            <div className="form-check" key={status}>
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id={`filter-status-${status}`}
+                                checked={localFilters.statuses?.includes(status)}
+                                onChange={() => handleStatusFilterChange(status)}
+                              />
+                              <label className="form-check-label" htmlFor={`filter-status-${status}`}>
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </label>
+                            </div>
+                          ))}
                         </div>
-                      </li>
-                    </ul>
+
+                        {/* Items Per Page */}
+                        <div className="form-group mb-3">
+                          <label className="form-label">Items per page</label>
+                          {[2, 5, 10, 20, 30, 50, 100].map((limit) => (
+                            <div className="form-check" key={limit}>
+                              <input
+                                className="form-check-input"
+                                type="radio"
+                                name="customerItemsPerPage"
+                                id={`customer-limit-${limit}`}
+                                checked={localFilters.limit === limit}
+                                onChange={() => handleItemsPerPageChange(limit)}
+                              />
+                              <label className="form-check-label" htmlFor={`customer-limit-${limit}`}>
+                                {limit} items
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="d-flex justify-content-between pt-2 border-top">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={handleResetFilters}
+                          >
+                            Reset
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={handleApplyFilters}
+                            disabled={loading}
+                          >
+                            {loading ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                Loading...
+                              </>
+                            ) : (
+                              'Apply'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
