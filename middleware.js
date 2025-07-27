@@ -64,7 +64,7 @@ export function middleware(request) {
   if (isPublicRoute && token && pathname !== '/') {
     try {
       jwt.verify(token, JWT_SECRET);
-      const dashboardUrl = new URL('/dashboard', request.url);
+      const dashboardUrl = new URL('/manager', request.url);
       return NextResponse.redirect(dashboardUrl);
     } catch (error) {
       // Invalid token, allow access to auth pages

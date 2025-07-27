@@ -32,13 +32,13 @@ export default function HomePage() {
 
         // Role-based redirection
         if (parsedUser.role === 'superAdmin') {
-          router.push('/dashboard/users');
+          router.push('/manager/users');
         } else if (parsedUser.role === 'customers') {
-          router.push('/dashboard/customers');
+          router.push('/manager/customers');
         } else if (parsedUser.role === 'moderator') {
-          router.push('/dashboard/customers');
+          router.push('/manager/customers');
         } else if (parsedUser.role === 'customerUsers') {
-          router.push('/dashboard/customerUsers');
+          router.push('/manager/customerUsers');
         } else {
           // Unknown role, redirect to unauthorized page
           router.push('/Pages/unauthorized');

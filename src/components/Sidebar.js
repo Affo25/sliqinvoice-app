@@ -6,10 +6,10 @@ export default function Sidebar() {
   const pathname = usePathname();
   
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: 'ni ni-dashlite' },
-    { name: 'Users', href: '/dashboard/users', icon: 'ni ni-users' },
-    { name: 'Customers', href: '/dashboard/customer', icon: 'ni ni-building' },
-    { name: 'Modules', href: '/dashboard/modules', icon: 'ni ni-file' },
+    { name: 'Dashboard', href: '/manager', icon: 'ni ni-dashlite' },
+    { name: 'Users', href: '/manager/users', icon: 'ni ni-users' },
+    { name: 'Customers', href: '/manager/customer', icon: 'ni ni-building' },
+    { name: 'Modules', href: '/manager/modules', icon: 'ni ni-file' },
     { name: 'Invoices', href: '/invoices', icon: 'ni ni-file-docs' },
     { name: 'Products', href: '/products', icon: 'ni ni-package' },
     { name: 'Reports', href: '/reports', icon: 'ni ni-growth' },
