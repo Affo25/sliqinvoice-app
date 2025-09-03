@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Button } from '../../../components/ui/button';
+import Button from '../../../components/ui/button';
 import {createUser} from '../../../redux/slices/usersSlice';
 
 import {

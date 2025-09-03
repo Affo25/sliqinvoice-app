@@ -1,5 +1,5 @@
 'use client';
-import { Button } from './button';
+import Button from './button';
 
 // This is a comprehensive example component showing how to use the gradient button
 // You can use this as reference throughout your project
@@ -166,7 +166,7 @@ export default function GradientButtonExamples() {
 
 /* 
 // 1. LOGIN PAGE USAGE:
-import { Button } from '../../components/ui/button';
+import Button from '../../components/ui/button';
 
 <Button 
   type="submit" 

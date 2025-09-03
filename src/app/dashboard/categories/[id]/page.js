@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { showToast } from '../../../../lib/toast';
 import { initializeDropdowns, cleanupDropdowns } from '../../../../lib/dropdownUtils';
-import { Button } from '../../../../components/ui/button';
+import Button from '../../../../components/ui/button';
 import {
   fetchCategoryById,
   clearCurrentCategory

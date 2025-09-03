@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Button } from './ui/button';
+import Button from './ui/button';
 
 // Complete demo showing gradient button in action
 export default function GradientButtonDemo() {

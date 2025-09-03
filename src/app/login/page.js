@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import { showToast } from '../../lib/toast';
 import Image from 'next/image';
+import Button from "../../components/ui/button";
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -26,25 +27,25 @@ export default function LoginPage() {
 
     if (loginUser.fulfilled.match(resultAction)) {
       showToast("Login successful!",'success');
-      setTimeout(() => 
-{
+      setTimeout(() => {
         switch (resultAction.payload.role) {
           case 'superAdmin':
             router.push('/dashboard/users');
             break;
-         case 'customers':
-           router.push('/dashboard/customers');
-           case 'moderator':
-             router.push('/dashboard');
-             case 'customerusers':
-               router.push('/dashboard');
+          case 'customers':
+            router.push('/dashboard/customers');
+            break;
+          case 'moderator':
+            router.push('/dashboard');
+            break;
+          case 'customerusers':
+            router.push('/dashboard');
+            break;
           default:
-             router.push('/dashboard');
+            router.push('/dashboard');
             break;
         }
-      1500
-    }
-    );
+      }, 1500);
     } else {
       showToast(resultAction.payload || "Login failed",'error');
     }

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
-import { Button } from '../../../components/ui/button';
+import Button from '../../../components/ui/button';
 import { showToast } from '../../../lib/toast';
 import { initializeDropdowns, cleanupDropdowns } from '../../../lib/dropdownUtils';
 import {

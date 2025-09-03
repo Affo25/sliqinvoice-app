@@ -8,7 +8,7 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     const user = await User.findById(id)
       .select('-password_hash')
@@ -57,7 +57,7 @@ export async function PUT(request, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const {
       email,
@@ -162,7 +162,7 @@ export async function DELETE(request, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check if user exists
     const user = await User.findById(id);

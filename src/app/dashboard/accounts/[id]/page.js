@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { showToast } from '../../../../lib/toast';
 import { initializeDropdowns, cleanupDropdowns } from '../../../../lib/dropdownUtils';
-import { Button } from '../../../../components/ui/button';
+import Button from '../../../../components/ui/button';
 import {
   fetchAccountById,
   clearCurrentAccount
@@ -579,26 +579,7 @@ export default function SingleAccountPage() {
                         </div>
                       </div>
                     </div>
-                   
-                    <div className="form-group">
-                      <label className="form-label" htmlFor="categoryId">
-                        Category <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        id="categoryId"
-                        className="form-select border border-2 border-primary rounded"
-                        value={transactionForm.categoryId}
-                        onChange={(e) => setTransactionForm(prev => ({ ...prev, categoryId: e.target.value }))}
-                        required
-                      >
-                        <option value="">Select Category</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.id}>
-                            {category.parentName ? `${category.parentName} > ${category.name}` : category.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                 
                     <div className="row">
                         <div className="col-md-4">
                       <div className="form-group">
@@ -638,7 +619,33 @@ export default function SingleAccountPage() {
                         </div>
                       </div>
                     </div>
-                     
+                      <div className="col-md-4">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="categoryId">
+                            Category <span className="text-danger">*</span>
+                          </label>
+                          <div className="form-control-wrap">
+                            <select
+                              id="categoryId"
+                              className="form-control"
+                              value={transactionForm.categoryId}
+                              onChange={(e) =>
+                                setTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))
+                              }
+                              required
+                            >
+                              <option value="">Select Category</option>
+                              {categories.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.parentName
+                                    ? `${category.parentName} > ${category.name}`
+                                    : category.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   
                     <div className="form-group">

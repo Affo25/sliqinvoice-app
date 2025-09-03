@@ -10,7 +10,7 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
     
-    const { id } = params;
+    const { id } = await params;
     
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -64,7 +64,7 @@ export async function PUT(request, { params }) {
   try {
     await connectDB();
     
-    const { id } = params;
+    const { id } = await params;
     
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -226,7 +226,7 @@ export async function DELETE(request, { params }) {
   try {
     await connectDB();
     
-    const { id } = params;
+    const { id } = await params;
     
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
