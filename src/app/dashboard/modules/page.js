@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { Button } from '../../../components/ui/button';
 import {
   fetchModules,
   createModule,
@@ -484,33 +485,36 @@ export default function ModulesPage() {
                 <div className="toggle-expand-content" data-content="pageMenu">
                   <ul className="nk-block-tools g-5">
                     <li className="nk-block-tools-opt">
-                      <button
-                        className="btn btn-danger"
+                      <Button
+                        variant="gradient-orange"
                         onClick={handleExport}
                         disabled={loading}
+                        className="gap-2"
                       >
                         <em className="icon ni ni-file-download"></em>
                         <span>Export Excel</span>
-                      </button>
-                      <button
-                        className="btn btn-info ml-3"
+                      </Button>
+                      <Button
+                        variant="gradient-blue"
                         onClick={() => setShowImportModal(true)}
                         disabled={loading}
+                        className="gap-2 ml-3"
                       >
                         <em className="icon ni ni-file-upload"></em>
                         <span>Import Excel</span>
-                      </button>
-                      <button
-                        className="btn btn-primary ml-3"
+                      </Button>
+                      <Button
+                        variant="gradient"
                         onClick={() => {
                           resetForm();
                           setShowModal(true);
                         }}
                         disabled={loading}
+                        className="gap-2 ml-3"
                       >
                         <em className="icon ni ni-plus"></em>
                         <span>Add Module</span>
-                      </button>
+                      </Button>
                     </li>
                   </ul>
                 </div>
@@ -715,16 +719,17 @@ export default function ModulesPage() {
                               : 'No modules have been created yet.'
                             }
                           </p>
-                          <button 
-                            className="btn btn-primary"
+                          <Button 
+                            variant="gradient"
                             onClick={() => {
                               resetForm();
                               setShowModal(true);
                             }}
+                            className="gap-2"
                           >
                             <em className="icon ni ni-plus"></em>
                             Add First Module
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -879,9 +884,9 @@ export default function ModulesPage() {
                       <div className="col-12">
                         <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                           <li>
-                            <button 
+                            <Button 
                               type="submit" 
-                              className="btn btn-primary"
+                              variant="gradient"
                               disabled={isSubmitting}
                             >
                               {isSubmitting ? (
@@ -890,17 +895,17 @@ export default function ModulesPage() {
                                   Processing...
                                 </>
                               ) : (editingModule ? 'Update Module' : 'Add Module')}
-                            </button>
+                            </Button>
                           </li>
                           <li>
-                            <button 
+                            <Button 
                               type="button" 
-                              className="btn btn-outline-light"
+                              variant="outline"
                               onClick={() => setShowModal(false)}
                               disabled={isSubmitting}
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </li>
                         </ul>
                       </div>

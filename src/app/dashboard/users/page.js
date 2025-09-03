@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { Button } from '../../../components/ui/button';
 import {
   fetchUsers,
   createUser,
@@ -486,24 +487,26 @@ export default function UsersPage() {
                 <div className="toggle-expand-content" data-content="pageMenu">
                   <ul className="nk-block-tools g-5">
                     <li className="nk-block-tools-opt">
-                      <button
-                        className="btn btn-danger"
+                      <Button
+                        variant="gradient-orange"
                         onClick={handleExport}
                         disabled={loading}
+                        className="gap-2"
                       >
                         <em className="icon ni ni-file"></em>
                         <span>Export Excel</span>
-                      </button>
-                      <button
-                        className="btn btn-info ml-3"
+                      </Button>
+                      <Button
+                        variant="gradient-blue"
                         onClick={() => setShowImportModal(true)}
                         disabled={loading}
+                        className="gap-2 ml-3"
                       >
                         <em className="icon ni ni-file"></em>
                         <span>Import Excel</span>
-                      </button>
-                      <button
-                        className="btn btn-primary ml-3"
+                      </Button>
+                      <Button
+                        variant="gradient"
                         onClick={() => {
                           setEditingUser(null);
                           setFormData({
@@ -519,10 +522,11 @@ export default function UsersPage() {
                           });
                           setShowModal(true);
                         }}
+                        className="gap-2 ml-3"
                       >
                         <em className="icon ni ni-plus"></em>
                         <span>Add User</span>
-                      </button>
+                      </Button>
 
                     </li>
                   </ul>
@@ -643,16 +647,18 @@ export default function UsersPage() {
                         </div>
 
                         <div className="d-flex justify-content-between pt-2 border-top">
-                          <button
+                          <Button
                             type="button"
-                            className="btn btn-sm btn-outline-secondary"
+                            variant="outline"
+                            size="sm"
                             onClick={handleResetFilters}
                           >
                             Reset
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
-                            className="btn btn-sm btn-primary"
+                            variant="gradient"
+                            size="sm"
                             onClick={handleApplyFilters}
                             disabled={loading}
                           >
@@ -664,7 +670,7 @@ export default function UsersPage() {
                             ) : (
                               'Apply'
                             )}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1104,9 +1110,9 @@ export default function UsersPage() {
                     /> */}
                   </div>
                   <div className="modal-footer">
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-secondary"
+                      variant="outline"
                       onClick={() => {
                         setShowModal(false);
                         setEditingUser(null);
@@ -1124,10 +1130,10 @@ export default function UsersPage() {
                       }}
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
-                      className="btn btn-primary"
+                      variant="gradient"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? (
@@ -1138,7 +1144,7 @@ export default function UsersPage() {
                       ) : (
                         editingUser ? 'Update User' : 'Create User'
                       )}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </div>

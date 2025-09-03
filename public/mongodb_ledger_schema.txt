@@ -1,0 +1,54 @@
+
+==============================
+📂 MongoDB Ledger Schema Design
+==============================
+
+1. Accounts Collection
+----------------------
+{
+  _id: ObjectId,
+  name: String,             // e.g., "Cash", "Sales Revenue"
+  type: String,             // "Income" | "Expense" | "Asset" | "Liability" | "Equity"
+  description: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+
+2. Categories Collection
+------------------------
+{
+  _id: ObjectId,
+  name: String,             // e.g., "Utilities", "Office Supplies"
+  parentId: ObjectId|null,  // reference to Categories._id (for subcategories)
+  description: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+
+3. Transactions Collection (Single-entry with debit/credit)
+----------------------------------------------------------
+{
+  _id: ObjectId,
+  date: Date,                   // transaction date
+  accountId: ObjectId,          // reference -> Accounts._id
+  categoryId: ObjectId,         // reference -> Categories._id
+  type: String,                 // "debit" | "credit"
+  amount: Number,               // positive number
+  currency: String,             // e.g., "USD", "PKR"
+  note: String,                 // optional description
+  createdBy: ObjectId,          // reference -> Users._id (if multi-user)
+  createdAt: Date,
+  updatedAt: Date
+}
+
+4. Users Collection (Optional)
+------------------------------
+{
+  _id: ObjectId,
+  name: String,
+  email: String,
+  passwordHash: String,
+  role: String,             // "admin" | "user"
+  createdAt: Date,
+  updatedAt: Date
+}

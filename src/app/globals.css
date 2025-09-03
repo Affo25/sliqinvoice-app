@@ -2,6 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Loader Animations */
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100vw); }
+  100% { transform: translateX(100vw); }
+}
+
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-150 {
+  animation-delay: 0.15s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+/* Button link styles */
+.link-primary {
+  background: none;
+  border: none;
+  color: #007bff;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0;
+}
+
+.link-primary:hover {
+  text-decoration: underline;
+  color: #0056b3;
+}
+
+.link-primary:disabled {
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Sidebar Menu Styles */
+.nk-menu-sub {
+  display: none;
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+  transition: all 0.3s ease;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+}
+
+.nk-menu-item.active .nk-menu-sub {
+  display: block;
+  opacity: 1;
+  max-height: 500px;
+  animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 500px;
+  }
+}
+
+.nk-menu-toggle {
+  position: relative;
+  cursor: pointer;
+}
+
+.nk-menu-toggle:after {
+  content: '\eb37';
+  font-family: 'Nioicon' !important;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.3s ease;
+  font-size: 0.75rem;
+  color: #8094ae;
+}
+
+.nk-menu-item.active .nk-menu-toggle:after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.nk-menu-sub .nk-menu-item {
+  margin: 0;
+}
+
+.nk-menu-sub .nk-menu-link {
+  padding: 0.5rem 1rem;
+  color: #8094ae;
+  border-radius: 0.25rem;
+  margin-bottom: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.nk-menu-sub .nk-menu-link:hover {
+  background-color: rgba(106, 124, 181, 0.1);
+  color: #526484;
+}
+
+.nk-menu-sub .nk-menu-link.active {
+  background-color: #6366f1;
+  color: white;
+}
+
 /* Enhanced Modules Page Styles */
 .cursor-pointer {
   cursor: pointer !important;

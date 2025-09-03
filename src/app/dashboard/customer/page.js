@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { Button } from '../../../components/ui/button';
 import {createUser} from '../../../redux/slices/usersSlice';
 
 import {
@@ -512,15 +513,16 @@ export default function CustomersPage() {
                       <em className="icon ni ni-alert-circle" style={{fontSize: '3rem'}}></em>
                       <h5 className="mt-3">Error Loading Customers</h5>
                       <p>{error}</p>
-                      <button 
-                        className="btn btn-primary mt-3"
+                      <Button 
+                        variant="gradient"
                         onClick={() => {
                           dispatch(clearError());
                           dispatch(fetchCustomers(filters));
                         }}
+                        className="mt-3"
                       >
                         Try Again
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -582,29 +584,32 @@ export default function CustomersPage() {
                   <ul className="nk-block-tools g-5">
                     <li className="nk-block-tools-opt">
                     
-                       <button 
-                        className="btn btn-danger"
+                       <Button 
+                        variant="gradient-orange"
                         onClick={handleExport}
                         disabled={loading}
+                        className="gap-2"
                       >
                         <em className="icon ni ni-file"></em>
                         <span>Export Excel</span>
-                      </button>
-                      <button 
-                        className="btn btn-info ml-3"
+                      </Button>
+                      <Button 
+                        variant="gradient-blue"
                         onClick={() => setShowImportModal(true)}
                         disabled={loading}
+                        className="gap-2 ml-3"
                       >
                         <em className="icon ni ni-file"></em>
                         <span>Import Excel</span>
-                      </button>
-                      <button 
-                        className="btn btn-primary ml-3"
+                      </Button>
+                      <Button 
+                        variant="gradient"
                         onClick={() => setShowModal(true)}
+                        className="gap-2 ml-3"
                       >
                         <em className="icon ni ni-plus"></em>
                         <span>Add Customer</span>
-                      </button>
+                      </Button>
                       
                     </li>
                   </ul>
@@ -872,13 +877,14 @@ export default function CustomersPage() {
                           <em className="icon ni ni-users" style={{fontSize: '3rem'}}></em>
                           <h5 className="mt-3">No Customers Found</h5>
                           <p>There are no customers to display. Try adjusting your filters or add a new customer.</p>
-                          <button 
-                            className="btn btn-primary mt-3"
+                          <Button 
+                            variant="gradient"
                             onClick={() => setShowModal(true)}
+                            className="gap-2 mt-3"
                           >
                             <em className="icon ni ni-plus"></em>
                             <span>Add First Customer</span>
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1097,16 +1103,16 @@ export default function CustomersPage() {
                     </div>
                     
                     <div className="modal-footer">
-                      <button 
+                      <Button 
                         type="button" 
-                        className="btn btn-secondary" 
+                        variant="outline"
                         onClick={() => setShowModal(false)}
                       >
                         Cancel
-                      </button>
-                      <button 
+                      </Button>
+                      <Button 
                         type="submit" 
-                        className="btn btn-primary" 
+                        variant="gradient"
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
@@ -1117,7 +1123,7 @@ export default function CustomersPage() {
                         ) : (
                           'Create Customer'
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 </div>
@@ -1273,16 +1279,16 @@ export default function CustomersPage() {
                     </div>
                     
                     <div className="modal-footer">
-                      <button 
+                      <Button 
                         type="button" 
-                        className="btn btn-secondary" 
+                        variant="outline"
                         onClick={() => setShowEditModal(false)}
                       >
                         Cancel
-                      </button>
-                      <button 
+                      </Button>
+                      <Button 
                         type="submit" 
-                        className="btn btn-primary" 
+                        variant="gradient"
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
@@ -1293,7 +1299,7 @@ export default function CustomersPage() {
                         ) : (
                           'Update Customer'
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 </div>

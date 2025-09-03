@@ -5,7 +5,7 @@ import { loginUser, clearError } from '../../redux/slices/authSlice'; // Adjust 
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import { showToast } from '../../lib/toast';
-
+import Image from 'next/image';
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -65,26 +65,42 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   return (
-    <div className="nk-app-root bg-dark nk-theme-color-a1">
+    <div   style={{
+    backgroundImage: "linear-gradient(to right, #cfd9df, #e2ebf0)",
+    padding: "20px",
+    borderRadius: "12px"
+  }} className="nk-app-root bg-light nk-theme-color-a1">
       {loading && (
-        <div className="overlay-loader">
-          <div className="spinner-border text-primary" role="status"></div>
-        </div>
+       <div className="overlay-loader d-flex justify-content-center align-items-center">
+     <div
+       className="spinner-border"
+       role="status"
+       style={{
+         width: "4rem",              // bigger size
+         height: "4rem",
+         borderWidth: "0.5rem",      // thicker
+         borderStyle: "solid",
+         borderRadius: "50%",
+         borderTopColor: "transparent", // gap for spinner effect
+         borderImage: "linear-gradient(to right, #26a69a, #43a047) 1", // gradient border
+       }}
+     >
+     </div>
+   </div>
       )}
       <div className="nk-main">
         <div className="nk-wrap nk-wrap-nosidebar">
           <div className="nk-content">
             <div style={{marginTop:"50px"}} className="nk-block nk-block-middle nk-auth-body wide-xs">
-              <div className="brand-logo pb-4 text-center">
+              <div className="card card-bordered border shadow-lg">
+                <div className="card-inner card-inner-lg">
+                   <div className="brand-logo pb-4 text-center">
                 <a href="/" className="logo-link">
-                  <img className="logo-light logo-img logo-img-lg" src="/images/logo2x.png" alt="logo" />
-                  <img className="logo-dark logo-img logo-img-lg" src="/images/logo-dark.png" alt="logo-dark" />
+                  <Image  width={150} height={80}  className="logo-light logo-img logo-img-lg" src="/images/main-logo.png" alt="logo" />
+                  <Image width={150} height={80} className="logo-dark logo-img logo-img-lg" src="/images/main-logo.png" alt="logo-dark" />
                 </a>
               </div>
-
-              <div className="card card-bordered">
-                <div className="card-inner card-inner-lg">
-                  <h4 className="nk-block-title text-center">Sign-In</h4>
+                  <p className="nk-block-title text-center text-grey-500 text-md font-normal  mb-5">Sign in to your accounts</p>
                   <form onSubmit={handleSubmit}>
                     <div className="form-group">
                 <div className="form-label-group">
@@ -136,9 +152,22 @@ export default function LoginPage() {
                     </div>
 
                     <div className="form-group">
-                      <button type="submit" className="btn btn-lg btn-primary btn-block">
-                        Sign in
-                      </button>
+                      <Button 
+                        type="submit" 
+                        variant="gradient" 
+                        size="lg" 
+                        className="w-full"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <span className="animate-spin mr-2">⏳</span>
+                            Signing in...
+                          </>
+                        ) : (
+                          'Sign in'
+                        )}
+                      </Button>
                     </div>
                   </form>
                   <div className="form-note-s2 text-center pt-4">
@@ -147,9 +176,9 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="text-center pt-4 pb-3">
-                <p className="text-soft">&copy; 2025 SliqInvoice. All Rights Reserved.</p>
-              </div>
+              {/* <div className="text-center pt-4 pb-3">
+                <p className="text-soft text-white">&copy; 2025 SliqInvoice. All Rights Reserved.</p>
+              </div> */}
             </div>
           </div>
         </div>

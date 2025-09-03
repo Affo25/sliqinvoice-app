@@ -4,6 +4,7 @@ let isInitialized = false;
 let dropdownHandler = null;
 let toggleHandler = null;
 let preventCloseHandler = null;
+let sidebarMenuHandler = null;
 
 // Initialize dropdown functionality
 export const initializeDropdowns = () => {
@@ -98,10 +99,51 @@ export const initializeDropdowns = () => {
     }
   };
 
+  // Sidebar menu toggle handler for NioLand theme
+  sidebarMenuHandler = (e) => {
+    const menuToggle = e.target.closest('.nk-menu-toggle');
+    
+    if (menuToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const menuItem = menuToggle.closest('.nk-menu-item');
+      const submenu = menuItem?.querySelector('.nk-menu-sub');
+      
+      if (submenu) {
+        // Check if menu is currently active
+        const isActive = menuItem.classList.contains('active');
+        
+        // Close all other open submenus
+        document.querySelectorAll('.nk-menu-item.active').forEach(item => {
+          if (item !== menuItem) {
+            item.classList.remove('active');
+            const otherSubmenu = item.querySelector('.nk-menu-sub');
+            if (otherSubmenu) {
+              otherSubmenu.style.display = 'none';
+            }
+          }
+        });
+        
+        // Toggle current submenu
+        if (isActive) {
+          menuItem.classList.remove('active');
+          submenu.style.display = 'none';
+        } else {
+          menuItem.classList.add('active');
+          submenu.style.display = 'block';
+        }
+        
+        console.log(`🔄 Sidebar menu toggled: ${isActive ? 'closed' : 'opened'}`);
+      }
+    }
+  };
+
   // Add event listeners
   document.addEventListener('click', dropdownHandler, true);
   document.addEventListener('click', toggleHandler, true);
   document.addEventListener('click', preventCloseHandler, true);
+  document.addEventListener('click', sidebarMenuHandler, true);
   
   isInitialized = true;
   console.log('✅ Dropdown functionality initialized');
@@ -129,6 +171,11 @@ export const cleanupDropdowns = () => {
     preventCloseHandler = null;
   }
 
+  if (sidebarMenuHandler) {
+    document.removeEventListener('click', sidebarMenuHandler, true);
+    sidebarMenuHandler = null;
+  }
+
   // Close all open dropdowns and toggles
   document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
     menu.classList.remove('show');
@@ -141,6 +188,15 @@ export const cleanupDropdowns = () => {
   
   document.querySelectorAll('.toggle-content.show').forEach(content => {
     content.classList.remove('show');
+  });
+
+  // Close sidebar menus
+  document.querySelectorAll('.nk-menu-item.active').forEach(item => {
+    item.classList.remove('active');
+    const submenu = item.querySelector('.nk-menu-sub');
+    if (submenu) {
+      submenu.style.display = 'none';
+    }
   });
   
   isInitialized = false;
@@ -176,25 +232,91 @@ export const closeAllDropdowns = () => {
   document.querySelectorAll('.toggle-content.show').forEach(content => {
     content.classList.remove('show');
   });
+  
+  // Close sidebar menus
+  document.querySelectorAll('.nk-menu-item.active').forEach(item => {
+    item.classList.remove('active');
+    const submenu = item.querySelector('.nk-menu-sub');
+    if (submenu) {
+      submenu.style.display = 'none';
+    }
+  });
+  
   console.log('🔒 All dropdowns closed');
+};
+
+// Initialize only sidebar menu functionality (for dynamic content)
+export const initializeSidebarMenus = () => {
+  // Remove any existing sidebar menu handlers to avoid duplicates
+  document.querySelectorAll('.nk-menu-toggle').forEach(toggle => {
+    const newToggle = toggle.cloneNode(true);
+    toggle.parentNode.replaceChild(newToggle, toggle);
+  });
+
+  // Add fresh event listeners to all menu toggles
+  document.querySelectorAll('.nk-menu-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const menuItem = toggle.closest('.nk-menu-item');
+      const submenu = menuItem?.querySelector('.nk-menu-sub');
+      
+      if (submenu) {
+        // Check if menu is currently active
+        const isActive = menuItem.classList.contains('active');
+        
+        // Close all other open submenus
+        document.querySelectorAll('.nk-menu-item.active').forEach(item => {
+          if (item !== menuItem) {
+            item.classList.remove('active');
+            const otherSubmenu = item.querySelector('.nk-menu-sub');
+            if (otherSubmenu) {
+              otherSubmenu.style.display = 'none';
+            }
+          }
+        });
+        
+        // Toggle current submenu
+        if (isActive) {
+          menuItem.classList.remove('active');
+          submenu.style.display = 'none';
+        } else {
+          menuItem.classList.add('active');
+          submenu.style.display = 'block';
+        }
+        
+        console.log(`🔄 Sidebar menu toggled: ${isActive ? 'closed' : 'opened'}`);
+      }
+    });
+  });
+
+  console.log('✅ Sidebar menu functionality initialized');
 };
 
 // Debug function to check dropdown state
 export const debugDropdowns = () => {
   const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
   const openToggles = document.querySelectorAll('.toggle-content.show');
+  const openSidebarMenus = document.querySelectorAll('.nk-menu-item.active');
   
   console.log('🔍 Dropdown Debug Info:', {
     initialized: isInitialized,
     openDropdowns: openDropdowns.length,
     openToggles: openToggles.length,
+    openSidebarMenus: openSidebarMenus.length,
     dropdownElements: Array.from(openDropdowns).map(el => el.className),
-    toggleElements: Array.from(openToggles).map(el => el.className)
+    toggleElements: Array.from(openToggles).map(el => el.className),
+    sidebarMenuElements: Array.from(openSidebarMenus).map(el => ({
+      classes: el.className,
+      text: el.querySelector('.nk-menu-text')?.textContent
+    }))
   });
   
   return {
     initialized: isInitialized,
     openDropdowns: openDropdowns.length,
-    openToggles: openToggles.length
+    openToggles: openToggles.length,
+    openSidebarMenus: openSidebarMenus.length
   };
 };
