@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { showToast } from '../../../lib/toast';
@@ -18,7 +18,8 @@ import {
 } from '../../../redux/slices/accountsSlice';
 import { fetchCategories } from '../../../redux/slices/categoriesSlice';
 
-export default function AccountsPage() {
+// Separate component that uses useSearchParams
+function AccountsPageContent() {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -550,5 +551,20 @@ export default function AccountsPage() {
         </>
       )}
     </div>
+  );
+}
+
+// Main component wrapped in Suspense
+export default function AccountsPage() {
+  return (
+    <Suspense fallback={
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    }>
+      <AccountsPageContent />
+    </Suspense>
   );
 }
