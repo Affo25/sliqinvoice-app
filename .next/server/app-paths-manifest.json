@@ -1,6 +1,9 @@
 {
-  "/dashboard/accounts/page": "app/dashboard/accounts/page.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/accounts/[id]/route": "app/api/accounts/[id]/route.js",
+  "/api/accounts/[id]/transactions/route": "app/api/accounts/[id]/transactions/route.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
   "/dashboard/users/page": "app/dashboard/users/page.js",
-  "/dashboard/categories/page": "app/dashboard/categories/page.js",
   "/dashboard/accounts/[id]/page": "app/dashboard/accounts/[id]/page.js"
 }

@@ -150,6 +150,19 @@ export default function SingleAccountPage() {
     }
   };
 
+  // Get last transaction balance and determine if it's debit or credit
+  const getLastTransactionBalance = () => {
+    if (!transactions || transactions.length === 0) {
+      return { balance: 0, isDebit: true };
+    }
+    
+    const lastTransaction = transactions[0]; // Assuming transactions are ordered by date desc
+    const balance = lastTransaction.balance || 0;
+    const isDebit = balance >= 0;
+    
+    return { balance: Math.abs(balance), isDebit };
+  };
+
   if (accountLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
@@ -221,51 +234,57 @@ export default function SingleAccountPage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Account Balance Card */}
       <div className="nk-block">
         <div className="row g-gs">
-          <div className="col-xxl-3 col-sm-6">
-            <div className="card">
-              <div className="nk-ecwg nk-ecwg6">
-                <div className="card-inner">
-                  <div className="card-title-group">
-                    <div className="card-title">
-                      <h6 className="title">Total Transactions</h6>
-                    </div>
-                    <div className="card-tools">
-                      <em className="card-hint icon ni ni-help-fill" data-toggle="tooltip" data-placement="left" title="Total number of transactions"></em>
-                    </div>
+          <div className="col-12">
+            <div className="card" style={{ minHeight: '150px' }}>
+              <div className="card-inner d-flex align-items-center justify-content-between px-4 py-4">
+                {/* Left Side - Net Balance Text */}
+                <div className="d-flex flex-column">
+                  <div className="d-flex align-items-center gap-3 mb-3">
+                    {(() => {
+                      const { balance, isDebit } = getLastTransactionBalance();
+                      return (
+                        <>
+                          <em 
+                            className={`icon ni ${isDebit ? 'ni-arrow-down' : 'ni-arrow-up'}`}
+                            style={{ 
+                              fontSize: '2.5rem', 
+                              color: isDebit ? '#e85347' : '#28a745' 
+                            }}
+                          ></em>
+                          <div>
+                            <h4 className="title mb-1">Net Balance</h4>
+                            <span 
+                              className={`${isDebit ? 'text-danger' : 'text-success'}`}
+                              style={{ fontSize: '0.875rem', fontWeight: '600', letterSpacing: '0.5px' }}
+                            >
+                              {isDebit ? 'DEBIT' : 'CREDIT'}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
-                  <div className="data">
-                    <div className="amount">{account.summary?.totalTransactions || 0}</div>
-                    <div className="info">
-                      <span className="text-soft">All time</span>
-                    </div>
-                  </div>
+                  <span className="text-soft" style={{ fontSize: '0.875rem' }}>
+                    {transactions && transactions.length > 0 ? 
+                      `Last updated: ${transactions[0]?.date || 'N/A'}` : 
+                      'No transactions yet'
+                    }
+                  </span>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="col-xxl-3 col-sm-6">
-            <div className="card">
-              <div className="nk-ecwg nk-ecwg6">
-                <div className="card-inner">
-                  <div className="card-title-group">
-                    <div className="card-title">
-                      <h6 className="title">Net Balance</h6>
-                    </div>
-                    <div className="card-tools">
-                      <em className="card-hint icon ni ni-help-fill" data-toggle="tooltip" data-placement="left" title="Debit minus Credit"></em>
-                    </div>
+                {/* Right Side - Amount */}
+                <div className="text-right">
+                  <div 
+                    className={`${getLastTransactionBalance().isDebit ? 'text-danger' : 'text-success'}`}
+                    style={{ fontSize: '3rem', fontWeight: 'bold', lineHeight: '1' }}
+                  >
+                    {getLastTransactionBalance().balance.toFixed(2)}
                   </div>
-                  <div className="data">
-                    <div className="amount">
-                      <span style={{fontSize:'2rem'}} className={`${(account.summary?.balance || 0) >= 0 ? 'text-danger' : 'text-success'}`}>
-                        {account.summary?.balance || 0}
-                      </span>
-                    </div>
-                   
+                  <div className="text-soft mt-2" style={{ fontSize: '0.875rem' }}>
+                    Based on last transaction
                   </div>
                 </div>
               </div>
@@ -325,29 +344,29 @@ export default function SingleAccountPage() {
             </div>
 
             <div className="card-inner p-0">
-              <div className="nk-tb-list nk-tb-ulist">
-                <div className="nk-tb-item nk-tb-head">
-                  <div className="nk-tb-col">
-                    <span className="sub-text">Date</span>
+              <div className="nk-tb-list nk-tb-ulist" style={{ border: '1px solid #e5e9f2' }}>
+                <div className="nk-tb-item nk-tb-head" style={{ borderBottom: '2px solid #d1d5db', backgroundColor: '#f8fafc' }}>
+                  <div className="nk-tb-col" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
+                    <span className="sub-text font-weight-bold">Date</span>
                   </div>
-                   <div className="nk-tb-col tb-col-lg">
-                    <span className="sub-text">Note</span>
+                   <div className="nk-tb-col tb-col-lg" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
+                    <span className="sub-text font-weight-bold">Note</span>
                   </div>
-                   <div className="nk-tb-col tb-col-md">
-                    <span className="sub-text">Debit</span>
+                   <div className="nk-tb-col tb-col-md" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
+                    <span className="sub-text font-weight-bold">Debit</span>
                   </div>
-                  <div className="nk-tb-col tb-col-mb">
-                    <span className="sub-text">Credit</span>
+                  <div className="nk-tb-col tb-col-mb" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
+                    <span className="sub-text font-weight-bold">Credit</span>
                   </div>
-                   <div className="nk-tb-col tb-col-md">
-                    <span className="sub-text">Balance</span>
+                   <div className="nk-tb-col tb-col-md" style={{ padding: '12px' }}>
+                    <span className="sub-text font-weight-bold">Balance</span>
                   </div>
                  
                 </div>
 
                 {transactionsLoading ? (
-                  <div className="nk-tb-item">
-                    <div className="nk-tb-col">
+                  <div className="nk-tb-item" style={{ borderBottom: '1px solid #e5e9f2' }}>
+                    <div className="nk-tb-col" style={{ padding: '16px', textAlign: 'center' }}>
                       <div className="spinner-border spinner-border-sm" role="status">
                         <span className="sr-only">Loading...</span>
                       </div>
@@ -355,33 +374,33 @@ export default function SingleAccountPage() {
                     </div>
                   </div>
                 ) : transactions.length === 0 ? (
-                  <div className="nk-tb-item">
-                    <div className="nk-tb-col">
+                  <div className="nk-tb-item" style={{ borderBottom: '1px solid #e5e9f2' }}>
+                    <div className="nk-tb-col" style={{ padding: '16px', textAlign: 'center' }}>
                       <span className="text-soft">No transactions found</span>
                     </div>
                   </div>
                 ) : (
                   transactions.map((transaction) => (
-                    <div key={transaction.id} className="nk-tb-item">
-                      <div className="nk-tb-col">
-                        <span className={`badge badge-sm badge-info`}>{transaction.date}</span>
+                    <div key={transaction.id} className="nk-tb-item" style={{ borderBottom: '1px solid #e5e9f2' }}>
+                      <div className="nk-tb-col" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
+                        <span className="text-bolder">{transaction.date}</span>
                       </div>
-                      <div className="nk-tb-col tb-col-mb">
+                      <div className="nk-tb-col tb-col-mb" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
                         <span className="text text-bolder">
                           {transaction.note || "N/A"}
                         </span>
                       </div>
-                        <div className="nk-tb-col tb-col-mb">
+                        <div className="nk-tb-col tb-col-mb" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
                         <span className="text text-bolder">
                           {transaction.debit > 0 ? transaction.debit : 'N/A'}
                         </span>
                       </div>
-                       <div className="nk-tb-col tb-col-mb">
+                       <div className="nk-tb-col tb-col-mb" style={{ borderRight: '1px solid #e5e9f2', padding: '12px' }}>
                         <span className="text text-bolder">
                           {transaction.credit > 0 ? transaction.credit : 'N/A'}
                         </span>
                       </div>
-                      <div className="nk-tb-col">
+                      <div className="nk-tb-col" style={{ padding: '12px' }}>
                         <span
                           className={`${transaction.balance > 0 ? 'text-success' : 'text-danger'}`}
                         >
