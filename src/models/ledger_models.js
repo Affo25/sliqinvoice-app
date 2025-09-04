@@ -8,6 +8,11 @@ const AccountSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    cat_name: { 
+      type: String, 
+      required: true,
+      trim: true
+    },
     type: { 
       type: String, 
       required: true,
@@ -34,15 +39,6 @@ const CategorySchema = new mongoose.Schema(
       required: true,
       trim: true
     },
-    parentId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'Category',
-      default: null 
-    },
-    description: { 
-      type: String, 
-      trim: true 
-    },
     is_active: { 
       type: Boolean, 
       default: true 
@@ -64,25 +60,19 @@ const TransactionSchema = new mongoose.Schema(
       ref: 'Account',
       required: true
     },
-    categoryId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'Category',
-      required: true
-    },
-    type: { 
-      type: String, 
-      required: true,
-      enum: ['debit', 'credit']
-    },
-    amount: { 
+    debit: { 
       type: Number, 
       required: true,
       min: 0
     },
-    currency: { 
-      type: String, 
+    credit: {
+      type: Number, 
       required: true,
-      default: 'USD'
+      min: 0
+    },
+    balance: { 
+      type: Number, 
+      required: true
     },
     note: { 
       type: String, 
@@ -101,7 +91,6 @@ const TransactionSchema = new mongoose.Schema(
 AccountSchema.index({ name: 1, type: 1 });
 CategorySchema.index({ name: 1, parentId: 1 });
 TransactionSchema.index({ accountId: 1, date: -1 });
-TransactionSchema.index({ categoryId: 1, date: -1 });
 TransactionSchema.index({ createdBy: 1, date: -1 });
 
 // Export models

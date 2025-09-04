@@ -11,15 +11,25 @@ export default function Sidebar() {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: 'ni ni-dashlite' },
+    
     { name: 'Users', href: '/dashboard/users', icon: 'ni ni-users' },
     { name: 'Customers', href: '/dashboard/customer', icon: 'ni ni-building' },
     { name: 'Modules', href: '/dashboard/modules', icon: 'ni ni-file' },
-    { name: 'Categories', href: '/dashboard/categories', icon: 'ni ni-folder-list' },
     { name: 'Invoices', href: '/invoices', icon: 'ni ni-file-docs' },
     { name: 'Products', href: '/products', icon: 'ni ni-package' },
     { name: 'Reports', href: '/reports', icon: 'ni ni-growth' },
-    { name: 'Settings', href: '/settings', icon: 'ni ni-setting' }
+    { name: 'Settings', href: '/settings', icon: 'ni ni-setting' },
+    { name: 'Dashboard', href: '/dashboard', icon: 'ni ni-dashlite' },
+    { 
+      name: 'Accounts', 
+      href: '/dashboard/accounts', 
+      icon: 'ni ni-wallet-alt',
+      hasSubMenu: true,
+      subMenus: [
+        { name: 'All Accounts', href: '/dashboard/accounts', icon: 'ni ni-wallet' },
+        { name: 'Categories', href: '/dashboard/categories', icon: 'ni ni-folder-list' },
+      ]
+    },
   ];
 
   // Fetch accounts for dynamic menu using Redux would be ideal,
@@ -82,93 +92,105 @@ export default function Sidebar() {
           <div className="nk-sidebar-menu" data-simplebar>
             <ul className="nk-menu">
               <li className="nk-menu-heading">
-                <h6 className="overline-title text-primary-alt">Menu Management</h6>
+                <h6 className="overline-title text-primary-alt">Main Navigation</h6>
               </li>
               {navigation.map((item) => (
-                <li key={item.name} className="nk-menu-item">
-                  <Link 
-                    href={item.href} 
-                    className={`nk-menu-link ${pathname === item.href ? 'active' : ''}`}
-                  >
-                    <span className="nk-menu-icon">
-                      <em className={`icon ${item.icon}`}></em>
-                    </span>
-                    <span className="nk-menu-text">{item.name}</span>
-                  </Link>
+                <li key={item.name} className={`nk-menu-item ${item.hasSubMenu ? 'has-sub' : ''}`}>
+                  {item.hasSubMenu ? (
+                    <>
+                      <a href="#" className="nk-menu-link nk-menu-toggle">
+                        <span className="nk-menu-icon">
+                          <em className={`icon ${item.icon}`}></em>
+                        </span>
+                        <span className="nk-menu-text">{item.name}</span>
+                      </a>
+                      <ul className="nk-menu-sub">
+                        {item.subMenus.map((subItem) => (
+                          <li key={subItem.name} className="nk-menu-item">
+                            <Link
+                              href={subItem.href}
+                              className={`nk-menu-link ${pathname === subItem.href ||
+                                  (subItem.href.includes("?") &&
+                                    pathname === subItem.href.split("?")[0])
+                                  ? "active bg-white text-dark"
+                                  : ""
+                                }`}
+                            >
+                              <span className="nk-menu-icon">
+                                <em className={`icon ${subItem.icon}`}></em>
+                              </span>
+                               <span className="nk-menu-text">{subItem.name}</span>
+                              {/* <span style={{fontSize:"10px solid", fontWeight:"bold"}} className="nk-menu-text ">{subItem.name}</span> */}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+
+                    </>
+                  ) : (
+                    <Link 
+                      href={item.href} 
+                      className={`nk-menu-link ${pathname === item.href ? 'active' : ''}`}
+                    >
+                      <span className="nk-menu-icon">
+                        <em className={`icon ${item.icon}`}></em>
+                      </span>
+                      <span className="nk-menu-text">{item.name}</span>
+                    </Link>
+                  )}
                 </li>
               ))}
 
+              {/* Recent Accounts Section */}
               <li className="nk-menu-heading">
-                <h6 className="overline-title text-primary-alt">Ledger Management</h6>
+                <h6 className="overline-title text-primary-alt">Recent Accounts</h6>
               </li>
-              <li className="nk-menu-item has-sub">
-                <a href="#" className="nk-menu-link nk-menu-toggle">
-                  <span className="nk-menu-icon">
-                    <em className="icon ni ni-wallet-alt"></em>
+              {loadingAccounts ? (
+                <li className="nk-menu-item">
+                  <span className="nk-menu-link">
+                    <span className="nk-menu-icon">
+                      <em className="icon ni ni-loader"></em>
+                    </span>
+                    <span className="nk-menu-text text-soft">Loading...</span>
                   </span>
-                  <span className="nk-menu-text">Accounts</span>
-                </a>
-                <ul className="nk-menu-sub">
-                  <li className="nk-menu-item">
+                </li>
+              ) : accounts.length > 0 ? (
+                accounts.slice(0, 5).map((account) => (
+                  <li key={account.id} className="nk-menu-item">
                     <Link 
-                      href="/dashboard/accounts" 
-                      className={`nk-menu-link ${pathname === '/dashboard/accounts' ? 'active' : ''}`}
+                      href={`/dashboard/accounts/${account.id}`}
+                      className={`nk-menu-link ${pathname === `/dashboard/accounts/${account.id}` ? 'active' : ''}`}
                     >
-                       <span className="nk-menu-icon">
-                    <em className="icon ni ni-wallet-alt"></em>
-                  </span>
-                      <span className="nk-menu-text">Manage Accounts</span>
+                      <span className="nk-menu-icon">
+                        <em className={`icon ${
+                          account.type === 'Income' ? 'ni ni-trend-up' : 
+                          account.type === 'Expense' ? 'ni ni-trend-down' : 
+                          account.type === 'Asset' ? 'ni ni-coins' :
+                          account.type === 'Liability' ? 'ni ni-credit-card' : 'ni ni-pie'
+                        }`}></em>
+                      </span>
+                      <span className="nk-menu-text">{account.name}</span>
+                      <span className={`badge badge-sm ml-auto ${
+                        account.type === 'Income' ? 'badge-success' : 
+                        account.type === 'Expense' ? 'badge-danger' : 
+                        account.type === 'Asset' ? 'badge-info' :
+                        account.type === 'Liability' ? 'badge-warning' : 'badge-secondary'
+                      }`}>
+                        {account.type.charAt(0)}
+                      </span>
                     </Link>
                   </li>
-                  {loadingAccounts ? (
-                    <li className="nk-menu-item">
-                      <span className="nk-menu-link">
-                        <span className="nk-menu-text text-soft">Loading...</span>
-                      </span>
-                    </li>
-                  ) : (
-                    accounts.map((account) => (
-                      <li key={account.id} className="nk-menu-item">
-                        <Link 
-                          href={`/dashboard/accounts/${account.id}`}
-                          className={`nk-menu-link ${pathname === `/dashboard/accounts/${account.id}` ? 'active' : ''}`}
-                        >
-                         
-                          <span className="nk-menu-text">{account.name}</span>
-                          <span className={`badge badge-sm ml-auto ${
-                            account.type === 'Income' ? 'badge-success' : 
-                            account.type === 'Expense' ? 'badge-danger' : 
-                            account.type === 'Asset' ? 'badge-info' :
-                            account.type === 'Liability' ? 'badge-warning' : 'badge-secondary'
-                          }`}>
-                            {account.type}
-                          </span>
-                        </Link>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </li>
-              
-              {/* <li className="nk-menu-heading">
-                <h6 className="overline-title text-primary-alt">Business Tools</h6>
-              </li>
-              <li className="nk-menu-item">
-                <Link href="/analytics" className="nk-menu-link">
-                  <span className="nk-menu-icon">
-                    <em className="icon ni ni-analytics"></em>
+                ))
+              ) : (
+                <li className="nk-menu-item">
+                  <span className="nk-menu-link">
+                    <span className="nk-menu-icon">
+                      <em className="icon ni ni-info"></em>
+                    </span>
+                    <span className="nk-menu-text text-soft">No accounts yet</span>
                   </span>
-                  <span className="nk-menu-text">Analytics</span>
-                </Link>
-              </li> */}
-              {/* <li className="nk-menu-item">
-                <Link href="/transactions" className="nk-menu-link">
-                  <span className="nk-menu-icon">
-                    <em className="icon ni ni-tranx"></em>
-                  </span>
-                  <span className="nk-menu-text">Transactions</span>
-                </Link>
-              </li> */}
+                </li>
+              )}
             </ul>
           </div>
         </div>

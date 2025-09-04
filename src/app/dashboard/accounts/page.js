@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { showToast } from '../../../lib/toast';
 import { initializeDropdowns, cleanupDropdowns } from '../../../lib/dropdownUtils';
 import { useNavigationLoader } from '../../../lib/useNavigationLoader';
@@ -16,12 +16,14 @@ import {
   setFilters,
   clearError
 } from '../../../redux/slices/accountsSlice';
+import { fetchCategories } from '../../../redux/slices/categoriesSlice';
 
 export default function AccountsPage() {
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isLoading: navLoading, navigateWithLoader } = useNavigationLoader();
-  
+
   // Redux state
   const {
     accounts,
@@ -31,32 +33,43 @@ export default function AccountsPage() {
     pagination,
     totalCount
   } = useSelector((state) => state.accounts);
+  const { categories } = useSelector((state) => state.categories);
 
   // Local state for UI
   const [showModal, setShowModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   // Form data
   const [formData, setFormData] = useState({
     name: '',
     type: 'Expense',
     description: '',
-    is_active: true
+    is_active: true,
+    cat_name: ""
   });
 
   // Account types
   const accountTypes = [
-    { value: 'Income', label: 'Income', color: 'badge-success' },
-    { value: 'Expense', label: 'Expense', color: 'badge-danger' },
-    { value: 'Asset', label: 'Asset', color: 'badge-info' },
-    { value: 'Liability', label: 'Liability', color: 'badge-warning' },
-    { value: 'Equity', label: 'Equity', color: 'badge-secondary' }
+    { value: 'Income', label: 'Income', color: 'badge-success', icon: 'ni ni-trend-up' },
+    { value: 'Expense', label: 'Expense', color: 'badge-danger', icon: 'ni ni-trend-down' },
+    { value: 'Asset', label: 'Asset', color: 'badge-info', icon: 'ni ni-coins' },
+    { value: 'Liability', label: 'Liability', color: 'badge-warning', icon: 'ni ni-credit-card' },
+    { value: 'Equity', label: 'Equity', color: 'badge-secondary', icon: 'ni ni-pie' }
   ];
+
 
   // Load accounts on mount and filter changes
   useEffect(() => {
     dispatch(fetchAccounts(filters));
+    const categoryFilters = {
+      type: filters.type || 'all',
+      status: filters.status || 'all',
+      search: filters.search || '',
+      all: true // or false, depending on your use case
+    };
+    dispatch(fetchCategories(categoryFilters));
   }, [dispatch, filters]);
 
   // Initialize dropdown functionality
@@ -97,17 +110,18 @@ export default function AccountsPage() {
 
       const message = editingAccount ? 'Account Updated Successfully!' : 'Account Created Successfully!';
       showToast(`<h5>${message}</h5><p>Account has been ${editingAccount ? 'updated' : 'added'} to the system.</p>`, 'success');
-      
+
       // Reset form and close modal
       setFormData({
         name: '',
         type: 'Expense',
         description: '',
-        is_active: true
+        is_active: true,
+        cat_name: ""
       });
       setEditingAccount(null);
       setShowModal(false);
-      
+
     } catch (error) {
       showToast(`<h5>Error ${editingAccount ? 'Updating' : 'Creating'} Account</h5><p>${error}</p>`, 'error');
     } finally {
@@ -122,7 +136,8 @@ export default function AccountsPage() {
       name: account.name,
       type: account.type,
       description: account.description || '',
-      is_active: account.is_active
+      is_active: account.is_active,
+      cat_name: account.cat_name || ''
     });
     setShowModal(true);
   };
@@ -184,10 +199,66 @@ export default function AccountsPage() {
     dispatch(setFilters({ page }));
   };
 
+  // Handle tab change
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    if (tabKey === 'all') {
+      router.push('/dashboard/accounts');
+    } else {
+      router.push(`/dashboard/accounts?type=${tabKey}`);
+    }
+  };
+
   // Get badge color for account type
   const getTypeBadgeColor = (type) => {
     return accountTypes.find(t => t.value === type)?.color || 'badge-secondary';
   };
+
+  // Handle URL params for tab switching
+  useEffect(() => {
+    const typeParam = searchParams.get('type');
+    if (typeParam && accountTypes.some(t => t.value === typeParam)) {
+      setActiveTab(typeParam);
+    } else if (!typeParam) {
+      setActiveTab('all');
+    }
+  }, [searchParams]);
+
+  // Filter accounts based on active tab (client-side filtering for better UX)
+  const getFilteredAccounts = () => {
+    if (activeTab === 'all') {
+      return accounts;
+    }
+    return accounts.filter(account => account.type === activeTab);
+  };
+
+  // Get account counts by type
+  const getAccountCounts = () => {
+    const counts = { all: accounts.length };
+    accountTypes.forEach(type => {
+      counts[type.value] = accounts.filter(account => account.type === type.value).length;
+    });
+    return counts;
+  };
+
+  // Get accounts summary for each type
+  const getAccountsSummary = () => {
+    const summary = {};
+    accountTypes.forEach(type => {
+      const typeAccounts = accounts.filter(account => account.type === type.value);
+      summary[type.value] = {
+        count: typeAccounts.length,
+        active: typeAccounts.filter(account => account.is_active).length,
+        inactive: typeAccounts.filter(account => !account.is_active).length,
+        recent: typeAccounts.slice(0, 3) // Get 3 most recent for display
+      };
+    });
+    return summary;
+  };
+
+  const accountCounts = getAccountCounts();
+  const filteredAccounts = getFilteredAccounts();
+  const accountsSummary = getAccountsSummary();
 
   return (
     <div>
@@ -208,7 +279,7 @@ export default function AccountsPage() {
               <div className="toggle-expand-content" data-content="pageMenu">
                 <ul className="nk-block-tools g-3">
                   <li>
-                    <Button 
+                    <Button
                       onClick={handleExportAccounts}
                       variant="outline"
                       disabled={loading || isExporting}
@@ -223,13 +294,21 @@ export default function AccountsPage() {
                     </Button>
                   </li>
                   <li className="nk-block-tools-opt">
-                    <Button 
-                      onClick={() => setShowModal(true)}
+                    <Button
+                      onClick={() => {
+                        // Pre-fill form with current tab type if not 'all'
+                        if (activeTab !== 'all') {
+                          setFormData(prev => ({ ...prev, type: activeTab }));
+                        }
+                        setShowModal(true);
+                      }}
                       variant="gradient"
                       className="gap-2"
                     >
                       <em className="icon ni ni-plus"></em>
-                      <span>Add Account</span>
+                      <span>
+                        {activeTab === 'all' ? 'Add Account' : `Add ${activeTab} Account`}
+                      </span>
                     </Button>
                   </li>
                 </ul>
@@ -239,266 +318,76 @@ export default function AccountsPage() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* // accounts summary section */}
       <div className="nk-block">
-        <div className="card card-bordered card-stretch">
-          <div className="card-inner-group">
-            <div className="card-inner position-relative card-tools-toggle">
-              <div className="card-title-group">
-                <div className="card-tools">
-                  <div className="form-inline flex-nowrap gx-3">
-                    <div className="form-wrap">
-                      <div className="form-icon form-icon-right">
-                        <em className="icon ni ni-search"></em>
-                      </div>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search accounts..."
-                        value={filters.search}
-                        onChange={handleSearchChange}
-                      />
-                    </div>
-                    <div className="form-wrap">
-                      <select
-                        className="form-select"
-                        value={filters.type}
-                        onChange={(e) => handleTypeFilter(e.target.value)}
-                      >
-                        <option value="all">All Types</option>
-                        {accountTypes.map(type => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-wrap">
-                      <select
-                        className="form-select"
-                        value={filters.status}
-                        onChange={(e) => handleStatusFilter(e.target.value)}
-                      >
-                        <option value="all">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
+        <div className="row g-4">
+          {['Income', 'Expense', 'Asset', 'Liability'].map((type) => {
+            const filteredAccounts = accounts.filter(acc => acc.type === type); // All accounts of this type
+
+            return (
+              <div key={type} className="col-md-6 col-lg-3">
+                <div
+                  className="card card-bordered rounded-3 shadow-sm hover-shadow"
+                  style={{
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <div className="card-inner p-3">
+                    {/* Table Title */}
+                    <h6 className="card-title mb-3">{type} Accounts</h6>
+
+                    {/* Account List */}
+                    <table className="table table-sm mb-0">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Account Name</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAccounts.length > 0 ? (
+                          filteredAccounts.map((acc, index) => (
+                            <tr key={acc.id}>
+                              <td>{index + 1}</td>
+                              <td>
+                                <a
+                                  href={`/dashboard/accounts/${acc.id}`}
+                                  className="text-decoration-none text-primary"
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  {acc.name}
+                                </a>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="2" className="text-muted text-center">
+                              No {type} accounts
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Accounts Table */}
-            <div className="card-inner p-0">
-              <div className="nk-tb-list nk-tb-ulist">
-                <div className="nk-tb-item nk-tb-head">
-                  <div className="nk-tb-col">
-                    <span className="sub-text">Account</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-mb">
-                    <span className="sub-text">Type</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-md">
-                    <span className="sub-text">Description</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-lg">
-                    <span className="sub-text">Status</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-lg">
-                    <span className="sub-text">Created</span>
-                  </div>
-                  <div className="nk-tb-col nk-tb-col-tools text-right">
-                    <span className="sub-text">Action</span>
-                  </div>
-                </div>
-
-                {loading ? (
-                  <div className="nk-tb-item">
-                    <div className="nk-tb-col">
-                      <div className="flex items-center">
-                        <InlineLoader size="md" color="blue" />
-                        <span className="ml-2">Loading accounts...</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : accounts.length === 0 ? (
-                  <div className="nk-tb-item">
-                    <div className="nk-tb-col">
-                      <span className="text-soft">No accounts found</span>
-                    </div>
-                  </div>
-                ) : (
-                  accounts.map((account) => (
-                    <div key={account.id} className="nk-tb-item">
-                      <div className="nk-tb-col">
-                        <div className="user-card">
-                          <div className="user-avatar bg-primary">
-                            <em className="icon ni ni-wallet-alt"></em>
-                          </div>
-                          <div className="user-info">
-                            <span className="tb-lead">{account.name}</span>
-                            <span className="tb-sub text-primary">
-                              <button 
-                                onClick={() => navigateWithLoader(`/dashboard/accounts/${account.id}`, { minLoadTime: 300 })}
-                                className="link-primary"
-                                disabled={navLoading}
-                              >
-                                View Details
-                              </button>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="nk-tb-col tb-col-mb">
-                        <span className={`badge badge-sm ${getTypeBadgeColor(account.type)}`}>
-                          {account.type}
-                        </span>
-                      </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span className="tb-amount">
-                          {account.description || <em className="text-soft">No description</em>}
-                        </span>
-                      </div>
-                      <div className="nk-tb-col tb-col-lg">
-                        <span className={`badge badge-dot ${account.is_active ? 'badge-success' : 'badge-danger'}`}>
-                          {account.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <div className="nk-tb-col tb-col-lg">
-                        <span className="tb-date">{account.createdAt}</span>
-                      </div>
-                      <div className="nk-tb-col nk-tb-col-tools">
-                        <ul className="nk-tb-actions gx-1">
-                          <li className="nk-tb-action-hidden">
-                            <button
-                              onClick={() => navigateWithLoader(`/dashboard/accounts/${account.id}`, { minLoadTime: 300 })}
-                              className="btn btn-trigger btn-icon"
-                              data-toggle="tooltip"
-                              data-placement="top"
-                              title="View Account"
-                              disabled={navLoading}
-                            >
-                              {navLoading ? (
-                                <InlineLoader size="sm" color="gray" />
-                              ) : (
-                                <em className="icon ni ni-eye"></em>
-                              )}
-                            </button>
-                          </li>
-                          <li>
-                            <div className="drodown">
-                              <a
-                                href="#"
-                                className="dropdown-toggle btn btn-icon btn-trigger"
-                                data-toggle="dropdown"
-                              >
-                                <em className="icon ni ni-more-h"></em>
-                              </a>
-                              <div className="dropdown-menu dropdown-menu-right">
-                                <ul className="link-list-opt no-bdr">
-                                  <li>
-                                    <a
-                                      href={`/dashboard/accounts/${account.id}`}
-                                      className="dropdown-item"
-                                    >
-                                      <em className="icon ni ni-eye"></em>
-                                      <span>View Details</span>
-                                    </a>
-                                  </li>
-                                  <li>
-                                    <button
-                                      onClick={() => handleEditAccount(account)}
-                                      className="dropdown-item"
-                                    >
-                                      <em className="icon ni ni-edit"></em>
-                                      <span>Edit Account</span>
-                                    </button>
-                                  </li>
-                                  <li>
-                                    <button
-                                      onClick={() => handleDeleteAccount(account.id, account.name)}
-                                      className="dropdown-item text-danger"
-                                    >
-                                      <em className="icon ni ni-trash"></em>
-                                      <span>Delete Account</span>
-                                    </button>
-                                  </li>
-                                </ul>
-                              </div>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="card-inner">
-                <div className="nk-block-between-md g-3">
-                  <div className="g">
-                    <div className="pagination-wrap">
-                      <div className="pagination-info">
-                        Showing {((pagination.currentPage - 1) * filters.limit) + 1} to{' '}
-                        {Math.min(pagination.currentPage * filters.limit, pagination.totalCount)} of{' '}
-                        {pagination.totalCount} entries
-                      </div>
-                    </div>
-                  </div>
-                  <div className="g">
-                    <div className="pagination-wrap">
-                      <ul className="pagination">
-                        <li className={`page-item ${!pagination.hasPrevPage ? 'disabled' : ''}`}>
-                          <button
-                            className="page-link"
-                            onClick={() => handlePageChange(pagination.currentPage - 1)}
-                            disabled={!pagination.hasPrevPage}
-                          >
-                            Prev
-                          </button>
-                        </li>
-                        {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-                          <li
-                            key={page}
-                            className={`page-item ${page === pagination.currentPage ? 'active' : ''}`}
-                          >
-                            <button
-                              className="page-link"
-                              onClick={() => handlePageChange(page)}
-                            >
-                              {page}
-                            </button>
-                          </li>
-                        ))}
-                        <li className={`page-item ${!pagination.hasNextPage ? 'disabled' : ''}`}>
-                          <button
-                            className="page-link"
-                            onClick={() => handlePageChange(pagination.currentPage + 1)}
-                            disabled={!pagination.hasNextPage}
-                          >
-                            Next
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
+
+
+
+
+
 
       {/* Modal for Add/Edit Account */}
       {showModal && (
         <>
           <div className="modal fade show" style={{ display: 'block' }}>
-            <div className="modal-dialog" role="document">
-              <div className="modal-content">
+            <div className="modal-dialog modal-xl" role="document">
+              <div className="modal-content modal-xl">
                 <div className="modal-header">
                   <h5 className="modal-title">
                     {editingAccount ? 'Edit Account' : 'Add New Account'}
@@ -523,7 +412,7 @@ export default function AccountsPage() {
                 <form onSubmit={handleSubmit}>
                   <div className="modal-body">
                     <div className="row">
-                      <div className="col-md-6">
+                      <div className="col-md-4">
                         <div className="form-group">
                           <label className="form-label" htmlFor="name">
                             Account Name <span className="text-danger">*</span>
@@ -539,32 +428,54 @@ export default function AccountsPage() {
                           />
                         </div>
                       </div>
-                         <div className="col-md-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="role">Account Type</label>
-                        <div className="form-control-wrap">
-                          <select
-                            id="type"
-                            className="form-control"
-                            value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                            required
-                          >
+                      <div className="col-md-4">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="role">Account Type</label>
+                          <div className="form-control-wrap">
+                            <select
+                              id="type"
+                              className="form-control"
+                              value={formData.type}
+                              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                              required
+                            >
                               <option value="">Select Account Type</option>
                               <option value="Income">Income</option>
                               <option value="Expense">Expense</option>
                               <option value="Liability">Liability</option>
                               <option value="Asset">Asset</option>
                               <option value="Equity">Equity</option>
-                          </select>
+                            </select>
+                          </div>
                         </div>
                       </div>
+                      <div className="col-md-4">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="category">Select Categories</label>
+                          <div className="form-control-wrap">
+                            <select
+                              id="category"
+                              className="form-control"
+                              value={formData.cat_name} // bind to cat_name
+                              onChange={(e) => setFormData({ ...formData, cat_name: e.target.value })} // update cat_name
+                              required
+                            >
+                              <option value="">Select Account Type</option>
+                              {categories.map((category) => (
+                                <option key={category.id} value={category.name}>
+                                  {category.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
-                    </div>
-                  
-                  
-                     
-                    
+
+
+
+
 
                     <div className="form-group">
                       <label className="form-label" htmlFor="description">

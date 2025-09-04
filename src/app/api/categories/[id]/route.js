@@ -32,9 +32,6 @@ export async function GET(request, { params }) {
       id: category._id.toString(),
       _id: category._id.toString(),
       name: category.name,
-      parentId: category.parentId?._id.toString() || null,
-      parentName: category.parentId?.name || null,
-      description: category.description,
       is_active: category.is_active,
       createdAt: category.createdAt?.toISOString().split('T')[0] || '',
       updatedAt: category.updatedAt?.toISOString().split('T')[0] || ''
@@ -118,9 +115,6 @@ export async function PUT(request, { params }) {
       id: updatedCategory._id.toString(),
       _id: updatedCategory._id.toString(),
       name: updatedCategory.name,
-      parentId: updatedCategory.parentId?._id.toString() || null,
-      parentName: updatedCategory.parentId?.name || null,
-      description: updatedCategory.description,
       is_active: updatedCategory.is_active,
       createdAt: updatedCategory.createdAt?.toISOString().split('T')[0] || '',
       updatedAt: updatedCategory.updatedAt?.toISOString().split('T')[0] || ''

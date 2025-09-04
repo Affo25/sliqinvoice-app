@@ -21,7 +21,6 @@ export async function GET(request, { params }) {
     // Get transaction with populated data
     const transaction = await Transaction.findById(id)
       .populate('accountId', 'name type')
-      .populate('categoryId', 'name')
       .populate('createdBy', 'first_name last_name');
 
     if (!transaction) {
@@ -41,13 +40,9 @@ export async function GET(request, { params }) {
         name: transaction.accountId?.name,
         type: transaction.accountId?.type
       },
-      category: {
-        id: transaction.categoryId?._id.toString(),
-        name: transaction.categoryId?.name
-      },
-      type: transaction.type,
-      amount: transaction.amount,
-      currency: transaction.currency,
+      debit: transaction.debit,
+      credit: transaction.credit,
+      balance: transaction.balance,
       note: transaction.note || '',
       createdBy: transaction.createdBy ? {
         id: transaction.createdBy._id.toString(),
@@ -90,7 +85,6 @@ export async function PUT(request, { params }) {
     const {
       date,
       accountId,
-      categoryId,
       type,
       amount,
       currency = 'USD',
@@ -98,7 +92,7 @@ export async function PUT(request, { params }) {
     } = body;
 
     // Validate required fields
-    if (!date || !accountId || !categoryId || !type || !amount) {
+    if (!date || !accountId  || !type || !amount) {
       return NextResponse.json(
         { success: false, message: 'Date, account, category, type, and amount are required' },
         { status: 400 }
@@ -146,21 +140,21 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Validate category exists
-    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid category ID' },
-        { status: 400 }
-      );
+    // Calculate new balance based on the account's transaction history
+    // Get all other transactions for this account, excluding current one
+    const otherTransactions = await Transaction.find({ 
+      accountId: accountId, 
+      _id: { $ne: id } 
+    }).sort({ date: 1, createdAt: 1 });
+
+    // Calculate running balance
+    let runningBalance = 0;
+    for (const txn of otherTransactions) {
+      runningBalance += txn.credit - txn.debit;
     }
 
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return NextResponse.json(
-        { success: false, message: 'Category not found' },
-        { status: 404 }
-      );
-    }
+    // Add the new transaction amounts
+    const newBalance = runningBalance + parseFloat(credit) - parseFloat(debit);
 
     // Update transaction
     const updatedTransaction = await Transaction.findByIdAndUpdate(
@@ -168,15 +162,13 @@ export async function PUT(request, { params }) {
       {
         date: new Date(date),
         accountId,
-        categoryId,
-        type,
-        amount: parseFloat(amount),
-        currency,
+        debit: parseFloat(debit),
+        credit: parseFloat(credit),
+        balance: newBalance,
         note: note.trim()
       },
       { new: true, runValidators: true }
     ).populate('accountId', 'name type')
-     .populate('categoryId', 'name')
      .populate('createdBy', 'first_name last_name');
 
     // Format response
@@ -189,13 +181,9 @@ export async function PUT(request, { params }) {
         name: updatedTransaction.accountId?.name,
         type: updatedTransaction.accountId?.type
       },
-      category: {
-        id: updatedTransaction.categoryId?._id.toString(),
-        name: updatedTransaction.categoryId?.name
-      },
-      type: updatedTransaction.type,
-      amount: updatedTransaction.amount,
-      currency: updatedTransaction.currency,
+      debit: updatedTransaction.debit,
+      credit: updatedTransaction.credit,
+      balance: updatedTransaction.balance,
       note: updatedTransaction.note,
       createdBy: updatedTransaction.createdBy ? {
         id: updatedTransaction.createdBy._id.toString(),

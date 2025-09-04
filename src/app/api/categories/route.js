@@ -32,12 +32,7 @@ export async function GET(request) {
       query.is_active = status === 'active';
     }
 
-    // Type filter (parent/child)
-    if (type === 'parent') {
-      query.parentId = null;
-    } else if (type === 'child') {
-      query.parentId = { $ne: null };
-    }
+   
 
     // If all=true or hierarchical=true, return all categories without pagination (for dropdown/hierarchy)
     if (all || hierarchical) {
@@ -49,9 +44,7 @@ export async function GET(request) {
         id: category._id.toString(),
         _id: category._id.toString(),
         name: category.name,
-        parentId: category.parentId?._id.toString() || null,
         parentName: category.parentId?.name || null,
-        description: category.description || '',
         is_active: category.is_active
       }));
 
@@ -68,8 +61,7 @@ export async function GET(request) {
     const totalPages = Math.ceil(totalCount / limit);
 
     const categories = await Category.find(query)
-      .populate('parentId', 'name')
-      .sort({ createdAt: -1 })
+      .sort({ name: 1 })
       .skip(skip)
       .limit(limit);
 
@@ -78,9 +70,6 @@ export async function GET(request) {
       id: category._id.toString(),
       _id: category._id.toString(),
       name: category.name,
-      parentId: category.parentId?._id.toString() || null,
-      parentName: category.parentId?.name || null,
-      description: category.description || '',
       is_active: category.is_active,
       createdAt: category.createdAt?.toISOString().split('T')[0] || '',
       updatedAt: category.updatedAt?.toISOString().split('T')[0] || ''
@@ -118,8 +107,6 @@ export async function POST(request) {
     const body = await request.json();
     const {
       name,
-      parentId = null,
-      description = '',
       is_active = true
     } = body;
 
@@ -145,25 +132,17 @@ export async function POST(request) {
     // Create category
     const newCategory = new Category({
       name: name.trim(),
-      parentId: parentId || null,
-      description: description.trim(),
       is_active
     });
 
     const savedCategory = await newCategory.save();
 
-    // Populate for response
-    const populatedCategory = await Category.findById(savedCategory._id)
-      .populate('parentId', 'name');
+
 
     // Format response
     const formattedCategory = {
       id: populatedCategory._id.toString(),
-      _id: populatedCategory._id.toString(),
       name: populatedCategory.name,
-      parentId: populatedCategory.parentId?._id.toString() || null,
-      parentName: populatedCategory.parentId?.name || null,
-      description: populatedCategory.description,
       is_active: populatedCategory.is_active,
       createdAt: populatedCategory.createdAt?.toISOString().split('T')[0] || '',
       updatedAt: populatedCategory.updatedAt?.toISOString().split('T')[0] || ''

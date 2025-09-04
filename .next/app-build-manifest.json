@@ -11,11 +11,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
-    ],
     "/api/auth/login/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -67,6 +62,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/accounts/page.js"
     ],
+    "/api/categories/seed/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/categories/seed/route.js"
+    ],
+    "/api/categories/[id]/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/categories/[id]/route.js"
+    ],
     "/dashboard/accounts/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -81,28 +86,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/accounts/[id]/transactions/route.js"
-    ],
-    "/dashboard/modules/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/dashboard/modules/page.css",
-      "static/chunks/app/dashboard/modules/page.js"
-    ],
-    "/api/modules/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/modules/route.js"
-    ],
-    "/dashboard/customer/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/dashboard/customer/page.css",
-      "static/chunks/app/dashboard/customer/page.js"
-    ],
-    "/api/customers/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/customers/route.js"
     ]
   }
 }

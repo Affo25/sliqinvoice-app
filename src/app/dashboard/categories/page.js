@@ -36,8 +36,6 @@ export default function CategoriesPage() {
   // Form data
   const [formData, setFormData] = useState({
     name: '',
-    parentId: '',
-    description: '',
     is_active: true
   });
 
@@ -82,8 +80,6 @@ export default function CategoriesPage() {
       // Reset form and close modal
       setFormData({
         name: '',
-        parentId: '',
-        description: '',
         is_active: true
       });
       setShowModal(false);
@@ -101,8 +97,6 @@ export default function CategoriesPage() {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      parentId: category.parentId || '',
-      description: category.description || '',
       is_active: category.is_active
     });
     setShowModal(true);
@@ -138,6 +132,13 @@ export default function CategoriesPage() {
     dispatch(setFilters({ [key]: value, page: 1 }));
   };
 
+
+   const handleSearchChange = (e) => {
+      dispatch(setFilters({
+        search: e.target.value,
+        page: 1
+      }));
+    };
   // Handle page change
   const handlePageChange = (page) => {
     dispatch(setFilters({ page }));
@@ -201,71 +202,36 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="nk-block">
-        <div className="card card-bordered card-stretch">
-          <div className="card-inner-group">
-            <div className="card-inner position-relative card-tools-toggle">
-              <div className="card-title-group">
-                <div className="card-title">
-                  <h6 className="title">Filter Categories</h6>
-                </div>
-              </div>
-              <div className="card-tools">
-                <div className="form-inline flex-nowrap gx-3">
-                  <div className="form-wrap w-150px">
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search categories..."
-                      value={filters.search}
-                      onChange={(e) => handleSearch(e.target.value)}
-                    />
-                  </div>
-                  <div className="form-wrap">
-                    <select
-                      className="form-select"
-                      value={filters.status || 'all'}
-                      onChange={(e) => handleFilterChange('status', e.target.value)}
-                    >
-                      <option value="all">All Status</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                  <div className="form-wrap">
-                    <select
-                      className="form-select"
-                      value={filters.type || 'all'}
-                      onChange={(e) => handleFilterChange('type', e.target.value)}
-                    >
-                      <option value="all">All Types</option>
-                      <option value="parent">Parent Categories</option>
-                      <option value="child">Subcategories</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+     
 
       {/* Categories Table */}
       <div className="nk-block">
         <div className="card card-bordered card-stretch">
           <div className="card-inner-group">
+             <div className="card-inner position-relative card-tools-toggle">
+              <div className="card-title-group">
+              
+                <div className="card-tools">
+                  <div className="form-inline flex-nowrap gx-3">
+                    <div className="form-wrap">
+                      
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search categories..."
+                       value={filters.search}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="card-inner p-0">
               <div className="nk-tb-list nk-tb-ulist">
                 <div className="nk-tb-item nk-tb-head">
                   <div className="nk-tb-col">
                     <span className="sub-text">Category</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-md">
-                    <span className="sub-text">Parent Category</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-lg">
-                    <span className="sub-text">Description</span>
                   </div>
                   <div className="nk-tb-col tb-col-md">
                     <span className="sub-text">Status</span>
@@ -316,62 +282,52 @@ export default function CategoriesPage() {
                           href={`/dashboard/categories/${category.id}`}
                           className="fw-medium text-primary"
                         >
-                          {category.name}
+                          {category.name.toUpperCase()}
                         </Link>
                       </div>
                       <div className="nk-tb-col tb-col-md">
-                        <span className="text-soft">
-                          {category.parentName || '-'}
-                        </span>
-                      </div>
-                      <div className="nk-tb-col tb-col-lg">
-                        <span className="text-soft">
-                          {category.description || 'No description'}
-                        </span>
-                      </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span className={`badge ${getCategoryBadge(category)}`}>
-                          {category.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                        {category.parentId && (
-                          <span className="badge badge-outline-info ml-1">Subcategory</span>
+                        {category.is_active ? (
+                          <span className="badge bg-success">Active</span>
+                        ) : (
+                          <span className="badge bg-danger">Inactive</span>
                         )}
                       </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span className="text-soft">
-                          {category.createdAt}
-                        </span>
-                      </div>
+
+                    <div className="nk-tb-col tb-col-md">
+  <span className="badge bg-success">
+    {category.createdAt
+      ? new Date(category.createdAt).toLocaleString('en-US', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+      : 'N/A'}
+  </span>
+</div>
+
+
+
+
                       <div className="nk-tb-col nk-tb-col-tools">
                         <ul className="nk-tb-actions gx-1">
                           <li>
-                            <div className="drodown">
-                              <a href="#" className="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
-                                <em className="icon ni ni-more-h"></em>
-                              </a>
-                              <div className="dropdown-menu dropdown-menu-right">
-                                <ul className="link-list-opt no-bdr">
-                                  <li>
-                                    <Link href={`/dashboard/categories/${category.id}`}>
-                                      <em className="icon ni ni-eye"></em>
-                                      <span>View Details</span>
-                                    </Link>
-                                  </li>
-                                  <li>
-                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(category); }}>
-                                      <em className="icon ni ni-edit"></em>
-                                      <span>Edit Category</span>
-                                    </a>
-                                  </li>
-                                  <li>
-                                    <a href="#" className="text-danger" onClick={(e) => { e.preventDefault(); handleDeleteClick(category); }}>
-                                      <em className="icon ni ni-trash"></em>
-                                      <span>Delete</span>
-                                    </a>
-                                  </li>
-                                </ul>
-                              </div>
-                            </div>
+                            <button type="button" className="btn btn-danger btn btn-sm" onClick={(e) => { e.preventDefault(); handleDeleteClick(category); }}>
+                               <span>
+                                <em className="icon ni ni-trash"></em>
+                              </span>
+                              Delete
+                            </button>
+
+                            <button type="button" className="btn btn-info btn btn-sm ml-3" onClick={(e) => { e.preventDefault(); handleEdit(category); }}>
+                              <span>
+                                <em className="icon ni ni-edit"></em>
+                              </span>
+                              Delete
+                            </button>
+                          
                           </li>
                         </ul>
                       </div>
@@ -446,8 +402,6 @@ export default function CategoriesPage() {
                       setEditingCategory(null);
                       setFormData({
                         name: '',
-                        parentId: '',
-                        description: '',
                         is_active: true
                       });
                     }}
@@ -472,39 +426,7 @@ export default function CategoriesPage() {
                       />
                     </div>
 
-                    <div className="form-group">
-                      <label className="form-label" htmlFor="parentId">
-                        Parent Category
-                      </label>
-                      <select
-                        id="parentId"
-                        className="form-select"
-                        value={formData.parentId}
-                        onChange={(e) => setFormData(prev => ({ ...prev, parentId: e.target.value }))}
-                      >
-                        <option value="">None (Root Category)</option>
-                        {getParentCategories().map(category => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="form-note">Leave empty to create a root category</div>
-                    </div>
 
-                    <div className="form-group">
-                      <label className="form-label" htmlFor="description">
-                        Description
-                      </label>
-                      <textarea
-                        id="description"
-                        className="form-control"
-                        rows="3"
-                        placeholder="Enter category description"
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      />
-                    </div>
 
                     <div className="form-group">
                       <div className="custom-control custom-switch">
@@ -530,8 +452,7 @@ export default function CategoriesPage() {
                         setEditingCategory(null);
                         setFormData({
                           name: '',
-                          parentId: '',
-                          description: '',
+                        
                           is_active: true
                         });
                       }}

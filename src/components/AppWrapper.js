@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import SplashScreen from './SplashScreen';
 
 export default function AppWrapper({ children }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -30,9 +29,6 @@ export default function AppWrapper({ children }) {
     }, 500);
   };
 
-  if (isLoading) {
-    return <SplashScreen onLoadingComplete={handleLoadingComplete} />;
-  }
 
   if (!showContent) {
     // Show blank screen during transition

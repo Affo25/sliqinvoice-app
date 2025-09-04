@@ -6,20 +6,9 @@ import Link from 'next/link';
 import { showToast } from '../../../../lib/toast';
 import { initializeDropdowns, cleanupDropdowns } from '../../../../lib/dropdownUtils';
 import Button from '../../../../components/ui/button';
-import {
-  fetchAccountById,
-  clearCurrentAccount
-} from '../../../../redux/slices/accountsSlice';
-import {
-  fetchCategories
-} from '../../../../redux/slices/categoriesSlice';
-import {
-  fetchTransactions,
-  createTransaction,
-  setFilters,
-  clearTransactions,
-  clearError
-} from '../../../../redux/slices/transactionsSlice';
+import {fetchAccountById,clearCurrentAccount} from '../../../../redux/slices/accountsSlice';
+import {fetchCategories} from '../../../../redux/slices/categoriesSlice';
+import {fetchTransactions,createTransaction,setFilters,clearTransactions,clearError} from '../../../../redux/slices/transactionsSlice';
 
 export default function SingleAccountPage() {
   const params = useParams();
@@ -44,10 +33,8 @@ export default function SingleAccountPage() {
   // Transaction form data
   const [transactionForm, setTransactionForm] = useState({
     date: new Date().toISOString().split('T')[0],
-    categoryId: '',
-    type: 'debit',
-    amount: '',
-    currency: 'USD',
+    credit: 0,
+    debit: 0,
     note: ''
   });
 
@@ -96,17 +83,12 @@ export default function SingleAccountPage() {
     setIsSubmitting(true);
 
     // Validation
-    if (!transactionForm.categoryId || !transactionForm.amount) {
+    if (!transactionForm.date || !transactionForm.note) {
       showToast('Please fill in all required fields!', 'error');
       setIsSubmitting(false);
       return;
     }
 
-    if (parseFloat(transactionForm.amount) <= 0) {
-      showToast('Amount must be greater than 0!', 'error');
-      setIsSubmitting(false);
-      return;
-    }
 
     try {
       await dispatch(createTransaction({
@@ -119,10 +101,8 @@ export default function SingleAccountPage() {
       // Reset form and close modal
       setTransactionForm({
         date: new Date().toISOString().split('T')[0],
-        categoryId: '',
-        type: 'debit',
-        amount: '',
-        currency: 'USD',
+        credit: 0,
+        debit: 0,
         note: ''
       });
       setShowTransactionModal(false);
@@ -161,7 +141,7 @@ export default function SingleAccountPage() {
   // Get account type badge color
   const getTypeBadgeColor = (type) => {
     switch (type) {
-      case 'Income': return 'badge-success';
+      case 'Income': return 'badge-info';
       case 'Expense': return 'badge-danger';
       case 'Asset': return 'badge-info';
       case 'Liability': return 'badge-warning';
@@ -210,15 +190,12 @@ export default function SingleAccountPage() {
                 <span>Back to Accounts</span>
               </Link>
             </div>
-            <h2 className="nk-block-title fw-normal">
-              {account.name}
-              <span className={`badge badge-sm ml-2 ${getTypeBadgeColor(account.type)}`}>
+            <h2 className="nk-block-title fw-bolder">
+              {account.name.toUpperCase()}
+            </h2>
+             <span className={`badge badge-sm ml-2 ${getTypeBadgeColor(account.type)}`}>
                 {account.type}
               </span>
-            </h2>
-            <div className="nk-block-des">
-              <p>{account.description || 'No description available'}</p>
-            </div>
           </div>
           <div className="nk-block-head-content">
             <div className="toggle-wrap nk-block-tools-toggle">
@@ -276,56 +253,6 @@ export default function SingleAccountPage() {
                 <div className="card-inner">
                   <div className="card-title-group">
                     <div className="card-title">
-                      <h6 className="title">Total Debit</h6>
-                    </div>
-                    <div className="card-tools">
-                      <em className="card-hint icon ni ni-help-fill" data-toggle="tooltip" data-placement="left" title="Total debit amount"></em>
-                    </div>
-                  </div>
-                  <div className="data">
-                    <div className="amount text-danger">
-                      {formatCurrency(account.summary?.totalDebit || 0)}
-                    </div>
-                    <div className="info">
-                      <span className="text-soft">All time</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-xxl-3 col-sm-6">
-            <div className="card">
-              <div className="nk-ecwg nk-ecwg6">
-                <div className="card-inner">
-                  <div className="card-title-group">
-                    <div className="card-title">
-                      <h6 className="title">Total Credit</h6>
-                    </div>
-                    <div className="card-tools">
-                      <em className="card-hint icon ni ni-help-fill" data-toggle="tooltip" data-placement="left" title="Total credit amount"></em>
-                    </div>
-                  </div>
-                  <div className="data">
-                    <div className="amount text-success">
-                      {formatCurrency(account.summary?.totalCredit || 0)}
-                    </div>
-                    <div className="info">
-                      <span className="text-soft">All time</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-xxl-3 col-sm-6">
-            <div className="card">
-              <div className="nk-ecwg nk-ecwg6">
-                <div className="card-inner">
-                  <div className="card-title-group">
-                    <div className="card-title">
                       <h6 className="title">Net Balance</h6>
                     </div>
                     <div className="card-tools">
@@ -333,14 +260,12 @@ export default function SingleAccountPage() {
                     </div>
                   </div>
                   <div className="data">
-                    <div className={`amount ${(account.summary?.balance || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
-                      {formatCurrency(account.summary?.balance || 0)}
-                    </div>
-                    <div className="info">
-                      <span className="text-soft">
-                        {(account.summary?.balance || 0) >= 0 ? 'Positive' : 'Negative'} balance
+                    <div className="amount">
+                      <span style={{fontSize:'2rem'}} className={`${(account.summary?.balance || 0) >= 0 ? 'text-danger' : 'text-success'}`}>
+                        {account.summary?.balance || 0}
                       </span>
                     </div>
+                   
                   </div>
                 </div>
               </div>
@@ -355,40 +280,45 @@ export default function SingleAccountPage() {
           <div className="card-inner-group">
             <div className="card-inner position-relative card-tools-toggle">
               <div className="card-title-group">
-                <div className="card-title">
+                 <div className="card-title">
                   <h6 className="title">Recent Transactions</h6>
                 </div>
+                  
+               
                 <div className="card-tools">
-                  <div className="form-inline flex-nowrap gx-3">
-                    <div className="form-wrap">
-                      <select
-                        className="form-select"
-                        value={filters.type}
-                        onChange={(e) => handleFilterChange('type', e.target.value)}
-                      >
-                        <option value="all">All Types</option>
-                        <option value="debit">Debit</option>
-                        <option value="credit">Credit</option>
-                      </select>
-                    </div>
-                    <div className="form-wrap">
-                      <input
-                        type="date"
-                        className="form-control"
-                        placeholder="Start Date"
-                        value={filters.startDate}
-                        onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-wrap">
-                      <input
-                        type="date"
-                        className="form-control"
-                        placeholder="End Date"
-                        value={filters.endDate}
-                        onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                      />
-                    </div>
+                <div className="form-inline flex-nowrap gx-1">
+                     <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="amount">
+                             <span className="text-black">Start Date:</span>
+                          </label>
+                          <input
+                          style={{marginLeft:'5px'}}
+                            type="date"
+                            id="amount"
+                            className="form-control"
+                            placeholder="Start Date"
+                           value={filters.startDate}
+                           onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                        <div className="col-md-6">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="amount">
+                             <span className="text-black">End Date:</span>
+                          </label>
+                          <input
+                          style={{marginLeft:'5px'}}
+                            type="date"
+                            id="amount"
+                            className="form-control"
+                            placeholder="End Date"
+                           value={filters.endDate}
+                           onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                          />
+                        </div>
+                      </div> 
                   </div>
                 </div>
               </div>
@@ -400,18 +330,19 @@ export default function SingleAccountPage() {
                   <div className="nk-tb-col">
                     <span className="sub-text">Date</span>
                   </div>
-                  <div className="nk-tb-col">
-                    <span className="sub-text">Category</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-mb">
-                    <span className="sub-text">Type</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-md">
-                    <span className="sub-text">Amount</span>
-                  </div>
-                  <div className="nk-tb-col tb-col-lg">
+                   <div className="nk-tb-col tb-col-lg">
                     <span className="sub-text">Note</span>
                   </div>
+                   <div className="nk-tb-col tb-col-md">
+                    <span className="sub-text">Debit</span>
+                  </div>
+                  <div className="nk-tb-col tb-col-mb">
+                    <span className="sub-text">Credit</span>
+                  </div>
+                   <div className="nk-tb-col tb-col-md">
+                    <span className="sub-text">Balance</span>
+                  </div>
+                 
                 </div>
 
                 {transactionsLoading ? (
@@ -433,26 +364,33 @@ export default function SingleAccountPage() {
                   transactions.map((transaction) => (
                     <div key={transaction.id} className="nk-tb-item">
                       <div className="nk-tb-col">
-                        <span className="tb-date">{transaction.date}</span>
-                      </div>
-                      <div className="nk-tb-col">
-                        <span className="tb-lead">{transaction.category?.name}</span>
+                        <span className={`badge badge-sm badge-info`}>{transaction.date}</span>
                       </div>
                       <div className="nk-tb-col tb-col-mb">
-                        <span className={`badge badge-sm ${transaction.type === 'debit' ? 'badge-danger' : 'badge-success'}`}>
-                          {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                        <span className="text text-bolder">
+                          {transaction.note || "N/A"}
                         </span>
                       </div>
-                      <div className="nk-tb-col tb-col-md">
-                        <span className={`tb-amount ${transaction.type === 'debit' ? 'text-danger' : 'text-success'}`}>
-                          {formatCurrency(transaction.amount, transaction.currency)}
+                        <div className="nk-tb-col tb-col-mb">
+                        <span className="text text-bolder">
+                          {transaction.debit > 0 ? transaction.debit : 'N/A'}
                         </span>
                       </div>
-                      <div className="nk-tb-col tb-col-lg">
-                        <span className="tb-sub">
-                          {transaction.note || <em className="text-soft">No note</em>}
+                       <div className="nk-tb-col tb-col-mb">
+                        <span className="text text-bolder">
+                          {transaction.credit > 0 ? transaction.credit : 'N/A'}
                         </span>
                       </div>
+                      <div className="nk-tb-col">
+                        <span
+                          className={`${transaction.balance > 0 ? 'text-success' : 'text-danger'}`}
+                        >
+                          {transaction.balance > 0 ? `+${transaction.balance}` : transaction.balance < 0 ? `${transaction.balance}` : 'N/A'}
+                        </span>
+                      </div>
+
+
+                     
                     </div>
                   ))
                 )}
@@ -520,8 +458,8 @@ export default function SingleAccountPage() {
       {showTransactionModal && (
         <>
           <div className="modal fade show" style={{ display: 'block' }}>
-            <div className="modal-dialog modal-lg modal-dialog-centered modal-customer" tabIndex="-1" role="document">
-              <div className="modal-content">
+            <div className="modal-dialog modal-xl modal-dialog-centered modal-customer" tabIndex="-1" role="document">
+              <div className="modal-content modal-xl">
                 <div className="modal-header">
                   <h5 className="modal-title">Add New Transaction</h5>
                   <button
@@ -531,10 +469,8 @@ export default function SingleAccountPage() {
                       setShowTransactionModal(false);
                       setTransactionForm({
                         date: new Date().toISOString().split('T')[0],
-                        categoryId: '',
-                        type: 'debit',
-                        amount: '',
-                        currency: 'USD',
+                        credit: 0,
+                        debit: 0,
                         note: ''
                       });
                     }}
@@ -543,9 +479,9 @@ export default function SingleAccountPage() {
                   </button>
                 </div>
                 <form onSubmit={handleTransactionSubmit}>
-                  <div className="modal-body modal-lg">
+                  <div className="modal-body modal-xl">
                     <div className='row'>
-                      <div className="col-md-6">
+                      <div className="col-md-4">
                         <div className="form-group">
                           <label className="form-label" htmlFor="date">
                             Date <span className="text-danger">*</span>
@@ -560,10 +496,10 @@ export default function SingleAccountPage() {
                           />
                         </div>
                       </div>
-                       <div className="col-md-6">
+                       <div className="col-md-4">
                         <div className="form-group">
                           <label className="form-label" htmlFor="amount">
-                            Amount <span className="text-danger">*</span>
+                            Debit <span className="text-danger">*</span>
                           </label>
                           <input
                             type="number"
@@ -572,81 +508,33 @@ export default function SingleAccountPage() {
                             placeholder="0.00"
                             step="0.01"
                             min="0"
-                            value={transactionForm.amount}
-                            onChange={(e) => setTransactionForm(prev => ({ ...prev, amount: e.target.value }))}
+                            value={transactionForm.debit}
+                            onChange={(e) => setTransactionForm(prev => ({ ...prev, debit: e.target.value }))}
+                            required
+                          />
+                        </div>
+                      </div>
+                       <div className="col-md-4">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="amount">
+                            Credit <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            id="amount"
+                            className="form-control"
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0"
+                            value={transactionForm.credit}
+                            onChange={(e) => setTransactionForm(prev => ({ ...prev, credit: e.target.value }))}
                             required
                           />
                         </div>
                       </div>
                     </div>
                  
-                    <div className="row">
-                        <div className="col-md-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="type">Transaction Type</label>
-                        <div className="form-control-wrap">
-                          <select
-                            id="type"
-                            className="form-control"
-                            value={transactionForm.type}
-                            onChange={(e) => setTransactionForm(prev => ({ ...prev, type: e.target.value }))}
-                            required
-                          >
-                              <option value="">Select Transaction Type</option>
-                              <option value="debit">Debit</option>
-                              <option value="credit">Credit</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                       <div className="col-md-4">
-                      <div className="form-group">
-                        <label className="form-label" htmlFor="currency">Currency</label>
-                        <div className="form-control-wrap">
-                          <select
-                            id="currency"
-                            className="form-control"
-                            value={transactionForm.currency}
-                            onChange={(e) => setTransactionForm(prev => ({ ...prev, currency: e.target.value }))}
-                            required
-                          >
-                              <option value="">Select Currency</option>
-                              <option value="USD">USD - US Dollar</option>
-                              <option value="EUR">EUR - Euro</option>
-                              <option value="GBP">GBP - British Pound</option>
-                              <option value="PKR">PKR - Pakistani Rupee</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                      <div className="col-md-4">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="categoryId">
-                            Category <span className="text-danger">*</span>
-                          </label>
-                          <div className="form-control-wrap">
-                            <select
-                              id="categoryId"
-                              className="form-control"
-                              value={transactionForm.categoryId}
-                              onChange={(e) =>
-                                setTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))
-                              }
-                              required
-                            >
-                              <option value="">Select Category</option>
-                              {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                  {category.parentName
-                                    ? `${category.parentName} > ${category.name}`
-                                    : category.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  
                   
                     <div className="form-group">
                       <label className="form-label" htmlFor="note">

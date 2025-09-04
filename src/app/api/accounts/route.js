@@ -62,6 +62,7 @@ export async function GET(request) {
     const formattedAccounts = accounts.map(account => ({
       id: account._id.toString(),
       _id: account._id.toString(),
+      cat_name: account.cat_name,
       name: account.name,
       type: account.type,
       description: account.description || '',
@@ -102,6 +103,7 @@ export async function POST(request) {
     const body = await request.json();
     const {
       name,
+      cat_name,
       type,
       description = '',
       is_active = true
@@ -138,6 +140,7 @@ export async function POST(request) {
     // Create account
     const newAccount = new Account({
       name: name.trim(),
+      cat_name: cat_name.trim(),
       type,
       description: description.trim(),
       is_active
@@ -150,6 +153,7 @@ export async function POST(request) {
       id: savedAccount._id.toString(),
       _id: savedAccount._id.toString(),
       name: savedAccount.name,
+      cat_name: savedAccount.cat_name,
       type: savedAccount.type,
       description: savedAccount.description,
       is_active: savedAccount.is_active,
