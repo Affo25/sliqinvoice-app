@@ -3,8 +3,10 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 // Initial state
 const initialState = {
   transactions: [],
+  recentTransactions: [],
   currentTransaction: null,
   loading: false,
+  recentLoading: false,
   error: null,
   totalCount: 0,
   filters: {
@@ -26,6 +28,24 @@ const initialState = {
 };
 
 // Async thunks for API calls
+export const fetchRecentTransactions = createAsyncThunk(
+  'transactions/fetchRecentTransactions',
+  async ({ limit = 5 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`/api/transactions/recent?limit=${limit}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch recent transactions');
+      }
+
+      return data.transactions;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const fetchTransactions = createAsyncThunk(
   'transactions/fetchTransactions',
   async ({ accountId, filters = {} }, { rejectWithValue }) => {
@@ -245,10 +265,28 @@ const transactionsSlice = createSlice({
       state.transactions = [];
       state.totalCount = 0;
       state.pagination = initialState.pagination;
+    },
+    clearRecentTransactions: (state) => {
+      state.recentTransactions = [];
     }
   },
   extraReducers: (builder) => {
     builder
+      // Fetch Recent Transactions
+      .addCase(fetchRecentTransactions.pending, (state) => {
+        state.recentLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchRecentTransactions.fulfilled, (state, action) => {
+        state.recentLoading = false;
+        state.recentTransactions = action.payload || [];
+      })
+      .addCase(fetchRecentTransactions.rejected, (state, action) => {
+        state.recentLoading = false;
+        state.error = action.payload;
+        state.recentTransactions = [];
+      })
+
       // Fetch Transactions
       .addCase(fetchTransactions.pending, (state) => {
         state.loading = true;
@@ -376,7 +414,8 @@ export const {
   setCurrentTransaction,
   clearCurrentTransaction,
   setLoading,
-  clearTransactions
+  clearTransactions,
+  clearRecentTransactions
 } = transactionsSlice.actions;
 
 export default transactionsSlice.reducer;

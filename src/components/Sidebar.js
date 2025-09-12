@@ -27,6 +27,7 @@ export default function Sidebar() {
       hasSubMenu: true,
       subMenus: [
         { name: 'All Accounts', href: '/dashboard/accounts', icon: 'ni ni-wallet' },
+        { name: 'Manage Accounts', href: '/dashboard/accounts/accounts_details', icon: 'ni ni-edit' },
         { name: 'Categories', href: '/dashboard/categories', icon: 'ni ni-folder-list' },
       ]
     },
@@ -92,7 +93,7 @@ export default function Sidebar() {
           <div className="nk-sidebar-menu" data-simplebar>
             <ul className="nk-menu">
               <li className="nk-menu-heading">
-                <h6 className="overline-title text-primary-alt">Main Navigation</h6>
+                <h6 className="overline-title text-primary-alt">Menus</h6>
               </li>
               {navigation.map((item) => (
                 <li key={item.name} className={`nk-menu-item ${item.hasSubMenu ? 'has-sub' : ''}`}>
@@ -141,56 +142,7 @@ export default function Sidebar() {
                 </li>
               ))}
 
-              {/* Recent Accounts Section */}
-              <li className="nk-menu-heading">
-                <h6 className="overline-title text-primary-alt">Recent Accounts</h6>
-              </li>
-              {loadingAccounts ? (
-                <li className="nk-menu-item">
-                  <span className="nk-menu-link">
-                    <span className="nk-menu-icon">
-                      <em className="icon ni ni-loader"></em>
-                    </span>
-                    <span className="nk-menu-text text-soft">Loading...</span>
-                  </span>
-                </li>
-              ) : accounts.length > 0 ? (
-                accounts.slice(0, 5).map((account) => (
-                  <li key={account.id} className="nk-menu-item">
-                    <Link 
-                      href={`/dashboard/accounts/${account.id}`}
-                      className={`nk-menu-link ${pathname === `/dashboard/accounts/${account.id}` ? 'active' : ''}`}
-                    >
-                      <span className="nk-menu-icon">
-                        <em className={`icon ${
-                          account.type === 'Income' ? 'ni ni-trend-up' : 
-                          account.type === 'Expense' ? 'ni ni-trend-down' : 
-                          account.type === 'Asset' ? 'ni ni-coins' :
-                          account.type === 'Liability' ? 'ni ni-credit-card' : 'ni ni-pie'
-                        }`}></em>
-                      </span>
-                      <span className="nk-menu-text">{account.name}</span>
-                      <span className={`badge badge-sm ml-auto ${
-                        account.type === 'Income' ? 'badge-success' : 
-                        account.type === 'Expense' ? 'badge-danger' : 
-                        account.type === 'Asset' ? 'badge-info' :
-                        account.type === 'Liability' ? 'badge-warning' : 'badge-secondary'
-                      }`}>
-                        {account.type.charAt(0)}
-                      </span>
-                    </Link>
-                  </li>
-                ))
-              ) : (
-                <li className="nk-menu-item">
-                  <span className="nk-menu-link">
-                    <span className="nk-menu-icon">
-                      <em className="icon ni ni-info"></em>
-                    </span>
-                    <span className="nk-menu-text text-soft">No accounts yet</span>
-                  </span>
-                </li>
-              )}
+              
             </ul>
           </div>
         </div>

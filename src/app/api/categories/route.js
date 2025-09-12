@@ -21,10 +21,7 @@ export async function GET(request) {
 
     // Search filter
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
+      query.name = { $regex: search, $options: 'i' };
     }
 
     // Status filter
@@ -37,15 +34,15 @@ export async function GET(request) {
     // If all=true or hierarchical=true, return all categories without pagination (for dropdown/hierarchy)
     if (all || hierarchical) {
       const categories = await Category.find(query)
-        .populate('parentId', 'name')
         .sort({ name: 1 });
 
       const formattedCategories = categories.map(category => ({
         id: category._id.toString(),
         _id: category._id.toString(),
         name: category.name,
-        parentName: category.parentId?.name || null,
-        is_active: category.is_active
+        is_active: category.is_active,
+        createdAt: category.createdAt,
+        updatedAt: category.updatedAt
       }));
 
       return NextResponse.json({
@@ -137,15 +134,13 @@ export async function POST(request) {
 
     const savedCategory = await newCategory.save();
 
-
-
     // Format response
     const formattedCategory = {
-      id: populatedCategory._id.toString(),
-      name: populatedCategory.name,
-      is_active: populatedCategory.is_active,
-      createdAt: populatedCategory.createdAt?.toISOString().split('T')[0] || '',
-      updatedAt: populatedCategory.updatedAt?.toISOString().split('T')[0] || ''
+      id: savedCategory._id.toString(),
+      name: savedCategory.name,
+      is_active: savedCategory.is_active,
+      createdAt: savedCategory.createdAt?.toISOString().split('T')[0] || '',
+      updatedAt: savedCategory.updatedAt?.toISOString().split('T')[0] || ''
     };
 
     return NextResponse.json({

@@ -7,6 +7,7 @@ import { initializeDropdowns, cleanupDropdowns } from '../../../lib/dropdownUtil
 import { useNavigationLoader } from '../../../lib/useNavigationLoader';
 import Button from '../../../components/ui/button';
 import { InlineLoader } from '../../../components/loader';
+import RecentTransactionWidget from '../accounts/recent Transaction_widget';
 import {
   fetchAccounts,
   createAccount,
@@ -17,6 +18,7 @@ import {
   clearError
 } from '../../../redux/slices/accountsSlice';
 import { fetchCategories } from '../../../redux/slices/categoriesSlice';
+import AccountsWidget from '../accounts/accounts_widget';
 
 // Separate component that uses useSearchParams
 function AccountsPageContent() {
@@ -319,66 +321,17 @@ function AccountsPageContent() {
         </div>
       </div>
 
-      {/* // accounts summary section */}
-      <div className="nk-block">
-        <div className="row g-4">
-          {['Income', 'Expense', 'Asset', 'Liability'].map((type) => {
-            const filteredAccounts = accounts.filter(acc => acc.type === type); // All accounts of this type
-
-            return (
-              <div key={type} className="col-md-6 col-lg-3">
-                <div
-                  className="card card-bordered rounded-3 shadow-sm hover-shadow"
-                  style={{
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  <div className="card-inner p-3">
-                    {/* Table Title */}
-                    <h6 className="card-title mb-3">{type} Accounts</h6>
-
-                    {/* Account List */}
-                    <table className="table table-sm mb-0">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Account Name</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredAccounts.length > 0 ? (
-                          filteredAccounts.map((acc, index) => (
-                            <tr key={acc.id}>
-                              <td>{index + 1}</td>
-                              <td>
-                                <a
-                                  href={`/dashboard/accounts/${acc.id}`}
-                                  className="text-decoration-none text-primary"
-                                  style={{ cursor: 'pointer' }}
-                                >
-                                  {acc.name}
-                                </a>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="2" className="text-muted text-center">
-                              No {type} accounts
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+            {/* account cards row */}
+      <div className='row'>
+        <div className='col-md-8'>
+          <AccountsWidget/>
+        </div>
+        <div className='col-md-4'>
+          <RecentTransactionWidget/>
         </div>
       </div>
 
-
+      
 
 
 

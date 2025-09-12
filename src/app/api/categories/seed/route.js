@@ -56,60 +56,15 @@ export async function POST(request) {
     // Insert categories
     const createdCategories = await Category.insertMany(
       seedCategories.map(category => ({
-        ...category,
+        name: category.name,
         is_active: true
       }))
     );
 
-    // Now create some subcategories
-    const parentCategories = await Category.find({ parentId: null });
-    const utilitiesParent = parentCategories.find(cat => cat.name === 'Utilities');
-    const travelParent = parentCategories.find(cat => cat.name === 'Travel & Transportation');
-    const marketingParent = parentCategories.find(cat => cat.name === 'Marketing & Advertising');
-
-    const subCategories = [];
-
-    if (utilitiesParent) {
-      subCategories.push(
-        { name: 'Electricity', description: 'Electrical bills', parentId: utilitiesParent._id },
-        { name: 'Internet & Phone', description: 'Internet and phone bills', parentId: utilitiesParent._id },
-        { name: 'Water & Gas', description: 'Water and gas utilities', parentId: utilitiesParent._id }
-      );
-    }
-
-    if (travelParent) {
-      subCategories.push(
-        { name: 'Fuel & Mileage', description: 'Vehicle fuel and mileage costs', parentId: travelParent._id },
-        { name: 'Hotels & Lodging', description: 'Hotel and accommodation costs', parentId: travelParent._id },
-        { name: 'Meals & Entertainment', description: 'Business meals and entertainment', parentId: travelParent._id }
-      );
-    }
-
-    if (marketingParent) {
-      subCategories.push(
-        { name: 'Online Advertising', description: 'Google Ads, Facebook Ads, etc.', parentId: marketingParent._id },
-        { name: 'Print & Media', description: 'Print advertisements and media', parentId: marketingParent._id },
-        { name: 'Website & SEO', description: 'Website development and SEO services', parentId: marketingParent._id }
-      );
-    }
-
-    if (subCategories.length > 0) {
-      await Category.insertMany(
-        subCategories.map(category => ({
-          ...category,
-          is_active: true
-        }))
-      );
-    }
-
-    const totalCreated = createdCategories.length + subCategories.length;
-
     return NextResponse.json({
       success: true,
-      message: `Successfully seeded ${totalCreated} categories`,
-      categoriesCreated: totalCreated,
-      parentCategories: createdCategories.length,
-      subCategories: subCategories.length
+      message: `Successfully seeded ${createdCategories.length} categories`,
+      categoriesCreated: createdCategories.length
     }, { status: 201 });
 
   } catch (error) {

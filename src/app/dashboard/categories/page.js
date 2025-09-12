@@ -287,14 +287,14 @@ export default function CategoriesPage() {
                       </div>
                       <div className="nk-tb-col tb-col-md">
                         {category.is_active ? (
-                          <span className="badge bg-success">Active</span>
+                          <span className="badge badge-success">Active</span>
                         ) : (
-                          <span className="badge bg-danger">Inactive</span>
+                          <span className="badge badge-danger">Inactive</span>
                         )}
                       </div>
 
                     <div className="nk-tb-col tb-col-md">
-  <span className="badge bg-success">
+  <span className="badge badge-info">
     {category.createdAt
       ? new Date(category.createdAt).toLocaleString('en-US', {
           day: '2-digit',
