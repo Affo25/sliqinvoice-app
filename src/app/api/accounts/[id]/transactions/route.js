@@ -93,7 +93,7 @@ export async function GET(request, { params }) {
 export async function POST(request, { params }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
