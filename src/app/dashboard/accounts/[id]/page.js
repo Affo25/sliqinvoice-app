@@ -238,7 +238,7 @@ export default function SingleAccountPage() {
       <div className="nk-block">
         <div className="row g-gs">
           <div className="col-12">
-            <div className="card" style={{ minHeight: '150px' }}>
+            <div className="card" style={{ minHeight: '140px' }}>
               <div className="card-inner d-flex align-items-center justify-content-between px-4 py-4">
                 {/* Left Side - Net Balance Text */}
                 <div className="d-flex flex-column">

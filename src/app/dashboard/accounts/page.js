@@ -7,7 +7,7 @@ import { initializeDropdowns, cleanupDropdowns } from '../../../lib/dropdownUtil
 import { useNavigationLoader } from '../../../lib/useNavigationLoader';
 import Button from '../../../components/ui/button';
 import { InlineLoader } from '../../../components/loader';
-import RecentTransactionWidget from '../accounts/recent Transaction_widget';
+import RecentTransactionWidget from './widgets/recent Transaction_widget';
 import {
   fetchAccounts,
   createAccount,
@@ -18,7 +18,7 @@ import {
   clearError
 } from '../../../redux/slices/accountsSlice';
 import { fetchCategories } from '../../../redux/slices/categoriesSlice';
-import AccountsWidget from '../accounts/accounts_widget';
+import AccountsWidget from '../accounts/widgets/accounts_widget';
 
 // Separate component that uses useSearchParams
 function AccountsPageContent() {

@@ -1,9 +1,10 @@
 {
-  "/api/accounts/route": "app/api/accounts/route.js",
-  "/api/users/route": "app/api/users/route.js",
-  "/api/auth/me/route": "app/api/auth/me/route.js",
-  "/page": "app/page.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/accounts/[id]/route": "app/api/accounts/[id]/route.js",
+  "/api/accounts/[id]/transactions/route": "app/api/accounts/[id]/transactions/route.js",
   "/login/page": "app/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/users/page": "app/dashboard/users/page.js"
+  "/page": "app/page.js",
+  "/dashboard/users/page": "app/dashboard/users/page.js",
+  "/dashboard/accounts/page": "app/dashboard/accounts/page.js",
+  "/dashboard/accounts/[id]/page": "app/dashboard/accounts/[id]/page.js"
 }

@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 export async function GET(request, { params }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
 
     const page = parseInt(searchParams.get('page')) || 1;
