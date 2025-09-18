@@ -4907,7 +4907,7 @@ textarea.textarea-auto { min-height: 0; }
 
 .custom-control-sm { min-height: 1.125rem; padding-left: 1.625rem; }
 
-.custom-control-sm.notext { margin-left: -0.5rem; }
+.custom-control-sm.notext { margin-left: -0.5rem; padding-bottom: 22px; }
 
 .custom-control-sm.notext .custom-control-label { left: 0.5rem; }
 
@@ -4919,7 +4919,7 @@ textarea.textarea-auto { min-height: 0; }
 
 .custom-control-lg { min-height: 2rem; padding-left: 3rem; }
 
-.custom-control-lg.notext { margin-left: -1rem; }
+.custom-control-lg.notext { margin-left: -1rem; padding-bottom: 22px;}
 
 .custom-control-lg.notext .custom-control-label { left: 1rem; }
 

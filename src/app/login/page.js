@@ -71,7 +71,7 @@ export default function LoginPage() {
     padding: "20px",
     borderRadius: "12px"
   }} className="nk-app-root bg-light nk-theme-color-a1">
-      {loading && (
+      {/* {loading && (
        <div className="overlay-loader d-flex justify-content-center align-items-center">
      <div
        className="spinner-border"
@@ -88,7 +88,7 @@ export default function LoginPage() {
      >
      </div>
    </div>
-      )}
+      )} */}
       <div className="nk-main">
         <div className="nk-wrap nk-wrap-nosidebar">
           <div className="nk-content">
@@ -162,7 +162,17 @@ export default function LoginPage() {
                       >
                         {loading ? (
                           <>
-                            <span className="animate-spin mr-2">⏳</span>
+                            <div 
+                              className="spinner-border spinner-border-sm mr-2" 
+                              role="status"
+                              style={{
+                                width: "1rem",
+                                height: "1rem",
+                                borderWidth: "0.15rem"
+                              }}
+                            >
+                              <span className="sr-only">Loading...</span>
+                            </div>
                             Signing in...
                           </>
                         ) : (

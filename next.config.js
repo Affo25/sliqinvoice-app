@@ -1,6 +1,6 @@
 module.exports = {
     async rewrites(){
-        return[
+        return [
             {
              source: '/manager/customer',
              destination: '/dashboard/customer',

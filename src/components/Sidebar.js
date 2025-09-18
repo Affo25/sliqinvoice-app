@@ -12,13 +12,13 @@ export default function Sidebar() {
   
   const navigation = [
     
-    { name: 'Users', href: '/dashboard/users', icon: 'ni ni-users' },
-    { name: 'Customers', href: '/dashboard/customer', icon: 'ni ni-building' },
-    { name: 'Modules', href: '/dashboard/modules', icon: 'ni ni-file' },
-    { name: 'Invoices', href: '/invoices', icon: 'ni ni-file-docs' },
-    { name: 'Products', href: '/products', icon: 'ni ni-package' },
-    { name: 'Reports', href: '/reports', icon: 'ni ni-growth' },
-    { name: 'Settings', href: '/settings', icon: 'ni ni-setting' },
+    // { name: 'Users', href: '/dashboard/users', icon: 'ni ni-users' },
+    // { name: 'Customers', href: '/dashboard/customer', icon: 'ni ni-building' },
+    // { name: 'Modules', href: '/dashboard/modules', icon: 'ni ni-file' },
+    // { name: 'Invoices', href: '/invoices', icon: 'ni ni-file-docs' },
+    // { name: 'Products', href: '/products', icon: 'ni ni-package' },
+    // { name: 'Reports', href: '/reports', icon: 'ni ni-growth' },
+    // { name: 'Settings', href: '/settings', icon: 'ni ni-setting' },
     { name: 'Dashboard', href: '/dashboard', icon: 'ni ni-dashlite' },
     { 
       name: 'Accounts', 

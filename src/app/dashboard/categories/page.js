@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import Button from '../../../components/ui/button';
@@ -133,12 +133,12 @@ export default function CategoriesPage() {
   };
 
 
-   const handleSearchChange = (e) => {
-      dispatch(setFilters({
-        search: e.target.value,
-        page: 1
-      }));
-    };
+  const handleSearchChange = (e) => {
+    dispatch(setFilters({
+      search: e.target.value,
+      page: 1
+    }));
+  };
   // Handle page change
   const handlePageChange = (page) => {
     dispatch(setFilters({ page }));
@@ -174,19 +174,9 @@ export default function CategoriesPage() {
               </a>
               <div className="toggle-expand-content" data-content="pageMenu">
                 <ul className="nk-block-tools g-3">
-                  <li>
-                    <Button 
-                      onClick={() => dispatch(fetchCategories({ seed: true }))}
-                      variant="outline"
-                      disabled={loading}
-                      className="gap-2"
-                    >
-                      <em className="icon ni ni-seeds"></em>
-                      <span>Seed Data</span>
-                    </Button>
-                  </li>
+                
                   <li className="nk-block-tools-opt">
-                    <Button 
+                    <Button
                       onClick={() => setShowModal(true)}
                       variant="gradient"
                       className="gap-2"
@@ -202,25 +192,24 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-     
+
 
       {/* Categories Table */}
       <div className="nk-block">
         <div className="card card-bordered card-stretch">
           <div className="card-inner-group">
-             <div className="card-inner position-relative card-tools-toggle">
+            <div className="card-inner position-relative card-tools-toggle">
               <div className="card-title-group">
-              
+
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
                     <div className="form-wrap">
-                      
                       <input
                         type="text"
                         className="form-control"
                         placeholder="Search categories..."
-                       value={filters.search}
-                      onChange={(e) => handleSearch(e.target.value)}
+                        value={filters.search}
+                        onChange={(e) => handleSearch(e.target.value)}
                       />
                     </div>
                   </div>
@@ -263,7 +252,7 @@ export default function CategoriesPage() {
                         </div>
                         <h5>No Categories Found</h5>
                         <p className="text-soft">Create your first category to get started.</p>
-                        <Button 
+                        <Button
                           onClick={() => setShowModal(true)}
                           variant="gradient"
                           className="gap-2"
@@ -278,7 +267,7 @@ export default function CategoriesPage() {
                   categories.map((category) => (
                     <div key={category.id} className="nk-tb-item">
                       <div className="nk-tb-col">
-                        <Link 
+                        <Link
                           href={`/dashboard/categories/${category.id}`}
                           className="fw-medium text-primary"
                         >
@@ -293,20 +282,20 @@ export default function CategoriesPage() {
                         )}
                       </div>
 
-                    <div className="nk-tb-col tb-col-md">
-  <span className="badge badge-info">
-    {category.createdAt
-      ? new Date(category.createdAt).toLocaleString('en-US', {
-          day: '2-digit',
-          month: 'long',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        })
-      : 'N/A'}
-  </span>
-</div>
+                      <div className="nk-tb-col tb-col-md">
+                        <span className="badge badge-info">
+                          {category.createdAt
+                            ? new Date(category.createdAt).toLocaleString('en-US', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            })
+                            : 'N/A'}
+                        </span>
+                      </div>
 
 
 
@@ -314,20 +303,22 @@ export default function CategoriesPage() {
                       <div className="nk-tb-col nk-tb-col-tools">
                         <ul className="nk-tb-actions gx-1">
                           <li>
-                            <button type="button" className="btn btn-danger btn btn-sm" onClick={(e) => { e.preventDefault(); handleDeleteClick(category); }}>
-                               <span>
-                                <em className="icon ni ni-trash"></em>
-                              </span>
-                              Delete
+
+                            <button
+                              className="btn btn-trigger btn-icon"
+                              title="Edit Category"
+                              onClick={(e) => { e.preventDefault(); handleEdit(category); }}
+                            >
+                              <em className="icon ni ni-edit"></em>
+                            </button>
+                            <button
+                              className="btn btn-trigger btn-icon text-danger"
+                              title="Delete Category"
+                              onClick={(e) => { e.preventDefault(); handleDeleteClick(category); }}
+                            >
+                              <em className="icon ni ni-trash"></em>
                             </button>
 
-                            <button type="button" className="btn btn-info btn btn-sm ml-3" onClick={(e) => { e.preventDefault(); handleEdit(category); }}>
-                              <span>
-                                <em className="icon ni ni-edit"></em>
-                              </span>
-                              Delete
-                            </button>
-                          
                           </li>
                         </ul>
                       </div>
@@ -338,7 +329,7 @@ export default function CategoriesPage() {
             </div>
 
             {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
+            {pagination && (
               <div className="card-inner">
                 <div className="nk-block-between-md g-3">
                   <div className="g">
@@ -452,7 +443,7 @@ export default function CategoriesPage() {
                         setEditingCategory(null);
                         setFormData({
                           name: '',
-                        
+
                           is_active: true
                         });
                       }}

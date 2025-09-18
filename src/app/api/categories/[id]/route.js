@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
     }
 
     // Get category
-    const category = await Category.findById(id).populate('parentId', 'name');
+    const category = await Category.findById(id);
     if (!category) {
       return NextResponse.json(
         { success: false, message: 'Category not found' },

@@ -11,7 +11,7 @@ const initialState = {
     search: '',
     status: 'all',
     page: 1,
-    limit: 10
+    limit: 2
   },
   pagination: {
     currentPage: 1,
@@ -33,7 +33,7 @@ export const fetchCategories = createAsyncThunk(
           method: 'POST',
         });
         const seedData = await seedResponse.json();
-        
+         
         if (!seedResponse.ok) {
           throw new Error(seedData.message || 'Failed to seed categories');
         }
@@ -44,7 +44,7 @@ export const fetchCategories = createAsyncThunk(
         status: filters.status || 'all',
         type: filters.type || 'all',
         page: filters.page || 1,
-        limit: filters.limit || 10,
+        limit: filters.limit || 2,
         ...(filters.all && { all: 'true' }),
         ...(filters.hierarchical && { hierarchical: 'true' })
       });

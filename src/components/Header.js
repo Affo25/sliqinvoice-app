@@ -6,7 +6,8 @@ import { useAuth } from '../lib/useAuth';
 export default function Header() {
   const { user, logout, loading } = useAuth();
 
-  const handleLogout = async () => {
+  const handleLogout = async (e) => {
+    e.preventDefault();
     try {
       const result = await logout();
       if (result.success) {
@@ -44,7 +45,7 @@ export default function Header() {
                   <em className="icon ni ni-card-view"></em>
                 </div>
                 <div className="nk-news-text">
-                  <p>Welcome to SliqInvoice Dashboard <span>Manage your invoices efficiently</span></p>
+                  <p>Welcome to SliqInvoice Dashboard</p>
                   <em className="icon ni ni-external"></em>
                 </div>
               </a>
@@ -131,7 +132,7 @@ export default function Header() {
                   </div> */}
                   <div className="dropdown-inner">
                     <ul className="link-list">
-                      <li><a onClick={handleLogout}><em className="icon ni ni-signout"></em><span>Sign out</span></a></li>
+                      <li><a href="#" onClick={handleLogout}><em className="icon ni ni-signout"></em><span>Sign out</span></a></li>
                     </ul>
                   </div>
                 </div>

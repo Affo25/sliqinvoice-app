@@ -24,6 +24,24 @@ const initialState = {
     hasNextPage: false,
     hasPrevPage: false,
     totalCount: 0
+  },
+  // Report-specific state
+  reportTransactions: [],
+  reportLoading: false,
+  reportFilters: {
+    search: '',
+    type: 'all',
+    category: 'all',
+    dateFrom: '',
+    dateTo: '',
+    page: 1
+  },
+  reportPagination: {
+    currentPage: 1,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+    totalCount: 0
   }
 };
 
@@ -208,13 +226,14 @@ export const exportTransactions = createAsyncThunk(
 
       // Create CSV content
       const csvContent = [
-        ['Date', 'Category', 'Type', 'Amount', 'Currency', 'Note', 'Created By'].join(','),
+        ['Date', 'Account Name', 'Account Type', 'Debit', 'Credit', 'Balance', 'Note', 'Created By'].join(','),
         ...data.transactions.map(transaction => [
           transaction.date,
-          `"${transaction.category?.name || ''}"`,
-          transaction.type,
-          transaction.amount,
-          transaction.currency,
+          `"${transaction.account?.name || ''}"`,
+          transaction.account?.type || '',
+          transaction.debit || 0,
+          transaction.credit || 0,
+          transaction.balance || 0,
           `"${transaction.note || ''}"`,
           `"${transaction.createdBy?.name || ''}"`,
         ].join(','))
@@ -238,6 +257,93 @@ export const exportTransactions = createAsyncThunk(
   }
 );
 
+// Accounts Report Async Thunks
+export const fetchAccountsReport = createAsyncThunk(
+  'transactions/fetchAccountsReport',
+  async (filters = {}, { rejectWithValue }) => {
+    try {
+      const queryParams = new URLSearchParams({
+        search: filters.search || '',
+        type: filters.type || 'all',
+        status: filters.status || 'all',
+        category: filters.category || 'all',
+        dateFrom: filters.dateFrom || '',
+        dateTo: filters.dateTo || '',
+        page: filters.page || 1,
+        limit: 10
+      });
+
+      const response = await fetch(`/api/accounts/accounts-report?${queryParams}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch accounts report');
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const exportAccountsReport = createAsyncThunk(
+  'transactions/exportAccountsReport',
+  async (filters = {}, { rejectWithValue }) => {
+    try {
+      const queryParams = new URLSearchParams({
+        search: filters.search || '',
+        type: filters.type || 'all',
+        status: filters.status || 'all',
+        category: filters.category || 'all',
+        dateFrom: filters.dateFrom || '',
+        dateTo: filters.dateTo || '',
+        export: 'true'
+      });
+
+      const response = await fetch(`/api/accounts/accounts-report?${queryParams}`);
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to export accounts report');
+      }
+
+      const data = await response.json();
+
+      // Create CSV content
+      const csvContent = [
+        ['Date', 'Account Name', 'Account Type', 'Category', 'Status', 'Debit', 'Credit', 'Balance', 'Note'].join(','),
+        ...data.transactions.map(transaction => [
+          transaction.date,
+          `"${transaction.account?.name || ''}"`,
+          transaction.account?.type || '',
+          `"${transaction.account?.category || ''}"`,
+          transaction.account?.status || '',
+          transaction.debit || 0,
+          transaction.credit || 0,
+          transaction.balance || 0,
+          `"${transaction.note || ''}"`,
+        ].join(','))
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `accounts_report_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      return { success: true, message: 'Accounts report exported successfully' };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 // Transactions slice
 const transactionsSlice = createSlice({
   name: 'transactions',
@@ -248,6 +354,9 @@ const transactionsSlice = createSlice({
     },
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
+    },
+    setReportFilters: (state, action) => {
+      state.reportFilters = { ...state.reportFilters, ...action.payload };
     },
     clearFilters: (state) => {
       state.filters = initialState.filters;
@@ -403,6 +512,35 @@ const transactionsSlice = createSlice({
       .addCase(exportTransactions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      // Fetch Accounts Report
+      .addCase(fetchAccountsReport.pending, (state) => {
+        state.reportLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAccountsReport.fulfilled, (state, action) => {
+        state.reportLoading = false;
+        state.reportTransactions = action.payload.transactions || [];
+        state.reportPagination = action.payload.pagination || state.reportPagination;
+      })
+      .addCase(fetchAccountsReport.rejected, (state, action) => {
+        state.reportLoading = false;
+        state.error = action.payload;
+        state.reportTransactions = [];
+      })
+
+      // Export Accounts Report
+      .addCase(exportAccountsReport.pending, (state) => {
+        state.reportLoading = true;
+        state.error = null;
+      })
+      .addCase(exportAccountsReport.fulfilled, (state) => {
+        state.reportLoading = false;
+      })
+      .addCase(exportAccountsReport.rejected, (state, action) => {
+        state.reportLoading = false;
+        state.error = action.payload;
       });
   },
 });
@@ -410,6 +548,7 @@ const transactionsSlice = createSlice({
 export const {
   clearError,
   setFilters,
+  setReportFilters,
   clearFilters,
   setCurrentTransaction,
   clearCurrentTransaction,

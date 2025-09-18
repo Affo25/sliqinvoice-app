@@ -341,10 +341,7 @@ export default function AccountsTableWidget() {
   };
 
   return (
-    <div className="nk-content">
-      <div className="container-fluid">
-        <div className="nk-content-inner">
-          <div className="nk-content-body">
+    <div>
             <div className="nk-block-head nk-block-head-sm">
               <div className="nk-block-between">
                 <div className="nk-block-head-content">
@@ -507,15 +504,7 @@ export default function AccountsTableWidget() {
               </div>
             </div>
 
-            {/* Error Display */}
-            {error && (
-              <div className="alert alert-danger alert-dismissible">
-                <button type="button" className="close" onClick={() => dispatch(clearError())}>
-                  <span>&times;</span>
-                </button>
-                <strong>Error!</strong> {error}
-              </div>
-            )}
+          
 
             {/* Accounts Table */}
             <div className="nk-block">
@@ -765,7 +754,7 @@ export default function AccountsTableWidget() {
                       </div>
 
                       {/* Pagination */}
-                      {pagination && pagination.totalPages > 1 && (
+                      {pagination && (
                         <div className="card-inner">
                           <div className="nk-block-between-md g-3">
                             <div className="g">
@@ -868,9 +857,9 @@ export default function AccountsTableWidget() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          
+       
+     
 
       {/* Add Account Modal */}
       {showModal && (

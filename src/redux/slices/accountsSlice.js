@@ -12,7 +12,7 @@ const initialState = {
     type: 'all',
     status: 'all',
     page: 1,
-    limit: 10
+    limit: 2
   },
   pagination: {
     currentPage: 1,
@@ -33,7 +33,7 @@ export const fetchAccounts = createAsyncThunk(
         type: filters.type || 'all',
         status: filters.status || 'all',
         page: filters.page || 1,
-        limit: filters.limit || 10
+        limit: filters.limit || 2
       });
 
       const response = await fetch(`/api/accounts?${queryParams}`);

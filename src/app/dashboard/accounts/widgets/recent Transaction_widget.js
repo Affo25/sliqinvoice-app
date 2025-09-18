@@ -103,7 +103,7 @@ export default function RecentTransactionWidget() {
                                 </div>
                                 <div className="nk-activity-data">
                                     <div className="label">
-                                        <strong>{formatCurrency(transaction.amount)}</strong> {typeInfo.text.toLowerCase()} 
+                                        <strong>{transaction.amount}</strong> {typeInfo.text.toLowerCase()} 
                                         {transaction.account?.name && (
                                             <> in <strong>{transaction.account.name}</strong></>
                                         )}
